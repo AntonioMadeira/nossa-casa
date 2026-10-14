@@ -814,6 +814,7 @@ export default function Gestao({ t, user, onClose }) {
             setLimitInput('');
           }}
           action={
+            <View style={{ gap: S.md }}>
             <Primary t={t} comum label="Guardar" onPress={() => {
               if (input.trim() && limitInput.trim()) {
                 const newLimit = parseFloat(limitInput.replace(',', '.'));
@@ -843,6 +844,16 @@ export default function Gestao({ t, user, onClose }) {
                 setLimitInput('');
               }
             }} />
+            {/* Alvo de 44 declarado, como o «Apagar loja» (INVARIANTE #5). O
+                nome vai no rótulo para o leitor de ecrã dizer qual. */}
+            {isAdmin(user) && (
+              <Pressable accessibilityRole="button" onPress={() => setModal('confirmDeleteEnvelope')}
+                accessibilityLabel={`Apagar o envelope ${selectedEnvelope}`}
+                style={{ minHeight: 44, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontFamily: FONT.body, fontSize: 14, color: t.state.errTexto }}>Apagar envelope</Text>
+              </Pressable>
+            )}
+            </View>
           }>
           <View style={{ gap: S.md }}>
             <View>
@@ -1027,6 +1038,29 @@ export default function Gestao({ t, user, onClose }) {
             </View>
           </View>
         </Sheet>
+      )}
+
+      {modal === 'confirmDeleteEnvelope' && isAdmin(user) && (
+          // O limite sai do orçamento e o ajuste do mês sai com ele (ver
+          // `apagarEnvelope` no store). As despesas já registadas ficam. Só
+          // administradores: o servidor também o impõe (`deleteRule`).
+          <Confirm t={t} destructive icon="trash"
+            title={`Apagar «${selectedEnvelope}»?`}
+            message={((envelopes || []).find(e => e.name === selectedEnvelope)?.used > 0
+              ? `Atenção: este envelope já tem ${EUR(envelopes.find(e => e.name === selectedEnvelope).used)} gastos este mês, que deixam de contar no orçamento. `
+              : '')
+              + 'O envelope sai da lista da casa e o limite deixa de contar no orçamento. '
+              + 'As despesas já registadas ficam no histórico. Não se desfaz.'}
+            confirmLabel="Apagar"
+            onConfirm={() => {
+              apagarEnvelope(selectedEnvelope);
+              setModal(null);
+              setSheetOpen(null);
+              setSelectedEnvelope(null);
+              setInput('');
+              setLimitInput('');
+            }}
+            onCancel={() => setModal(null)} />
       )}
 
       {modal === 'confirmDeleteShop' && (
