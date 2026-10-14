@@ -2,15 +2,22 @@
 
 // O convite por e-mail: quando um membro da casa acrescenta um adulto, o
 // servidor escreve a esse adulto, em nome de quem o acrescentou, com o endereço
-// da app e a palavra-passe da conta.
+// da app e a indicação de como entrar.
+//
+// -- A palavra-passe NÃO vai no e-mail ------------------------------------------
+//
+// Uma versão anterior mandava a palavra-passe em claro. Um e-mail fica na caixa
+// de entrada, nas cópias de segurança e nos servidores de correio durante anos,
+// e a única entrada de um adulto na app é «Continuar com Google» — por isso a
+// palavra-passe nem era precisa para entrar. Agora o e-mail só diz o endereço
+// da app e com que e-mail entrar; quem precisar da palavra-passe pede-a a quem
+// acrescentou.
 //
 // -- Porque é um hook e não o cliente -----------------------------------------
 //
-// A palavra-passe só existe em claro num sítio: no pedido que chega ao
-// servidor. Depois de gravada é um hash e ninguém a lê de volta. Quem a
-// mandasse a partir do telemóvel precisava de um serviço de correio e das
-// credenciais dele no dispositivo. Aqui é o SMTP do próprio PocketBase
-// (Definições > Mail), que já é do servidor e nunca chega à app.
+// Quem mandasse o e-mail a partir do telemóvel precisava de um serviço de
+// correio e das credenciais dele no dispositivo. Aqui é o SMTP do próprio
+// PocketBase (Definições > Mail), que já é do servidor e nunca chega à app.
 //
 // -- «Em nome de» --------------------------------------------------------------
 //
@@ -30,8 +37,6 @@
 // constantes ou funções de fora, nem sequer as deste ficheiro.
 
 onRecordCreateRequest((e) => {
-  // A palavra-passe lê-se ANTES do `next()`: depois de gravada já só há o hash.
-  const senha = e.record.getString('password');
   const papel = e.record.get('papel');
   const para = e.record.getString('email');
   const nome = e.record.getString('nome');
@@ -41,7 +46,7 @@ onRecordCreateRequest((e) => {
   // Só convida um adulto, com e-mail, acrescentado por outro membro. Uma
   // criança não tem e-mail (§8) e uma criação feita pelo superutilizador —
   // as provas, a simulação, a migração — não é um convite de ninguém.
-  if (papel === 'crianca' || !para || !senha) return;
+  if (papel === 'crianca' || !para) return;
   const quem = e.auth;
   if (!quem || quem.collection().name !== 'membros') return;
 
@@ -64,12 +69,11 @@ onRecordCreateRequest((e) => {
       '',
       'Abra a app aqui: ' + ligacao,
       '',
-      'Para entrar, use:',
-      '  E-mail: ' + para,
-      '  Palavra-passe: ' + senha,
+      'Para entrar, carregue em «Continuar com Google» e escolha a conta com o',
+      'e-mail ' + para + '.',
       '',
-      'Pode mudar a palavra-passe quando quiser, no Perfil. Apague este e-mail',
-      'depois de a guardar.',
+      'Se não usar uma conta Google com esse e-mail, peça a ' + quemNome,
+      'a palavra-passe da sua conta.',
       '',
       quemNome,
     ].join('\n');
