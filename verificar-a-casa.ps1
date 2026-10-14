@@ -1,19 +1,20 @@
-﻿# Verifica a casa depois de um reinicio. Corre sem privilegios nenhuns.
+﻿# Verifica a casa, que desde 14/10/2026 vive na VPS (136.144.202.8).
 #
 #   powershell -NoProfile -ExecutionPolicy Bypass -File .\verificar-a-casa.ps1
 #
-# Confirma que os tres servicos subiram sozinhos, que o tunel responde de fora,
-# e - o que mais importa - que o painel de administracao e a saude NAO saem.
+# Confirma que os dois servicos da VPS estao activos, que o tunel tem ligacoes,
+# que a casa responde de fora e - o que mais importa - que o painel de
+# administracao, a saude e as portas directas NAO saem.
+#
+# Precisa de `ssh` (vem com o Windows) e da chave autorizada na VPS.
 #
 # NOTA 1: ficheiro so ASCII e com marca de UTF-8. O powershell.exe 5.1 le os
 # .ps1 como ANSI, e um ficheiro com acentos rebenta-lhe o analisador com um erro
 # de chaveta numa linha que nao tem chaveta nenhuma.
 #
 # NOTA 2: nada de `-SkipHttpErrorCheck`. Esse parametro so existe no PowerShell
-# 7, e no 5.1 faz o pedido rebentar - a primeira versao disto dizia "sem
-# resposta" a um servidor que estava a responder, e dizia-o na linha a seguir a
-# dizer que ele respondia. Um verificador que grita falha numa casa sa e pior do
-# que nao haver verificador nenhum.
+# 7, e no 5.1 faz o pedido rebentar.
+$VPS = "root@136.144.202.8"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 $falhas = 0
 function Ver($nome, $obtido, $esperado) {
@@ -22,7 +23,7 @@ function Ver($nome, $obtido, $esperado) {
   "{0} {1,-52} {2}" -f $(if ($ok) { "OK  " } else { "FALHA" }), $nome, $obtido
 }
 # Devolve o CODIGO, seja ele qual for. No 5.1 um 404 atira, e o codigo vem da
-# excepcao; no 7 tambem atira sem o -SkipHttpErrorCheck. Serve nos dois.
+# excepcao.
 function Codigo($url, $metodo = "GET") {
   try {
     [int](Invoke-WebRequest -Uri $url -Method $metodo -TimeoutSec 20 -UseBasicParsing -ErrorAction Stop).StatusCode
@@ -30,37 +31,34 @@ function Codigo($url, $metodo = "GET") {
     if ($_.Exception.Response) { [int]$_.Exception.Response.StatusCode } else { "sem resposta" }
   }
 }
-
-"=== os servicos ==="
-foreach ($s in "Cloudflared", "NossaCasaPocketBase") {
-  $x = Get-Service $s -ErrorAction SilentlyContinue
-  Ver $s $(if ($x) { $x.Status } else { "NAO EXISTE" }) "Running"
+function NaVps($comando) {
+  (& ssh -o BatchMode=yes -o ConnectTimeout=10 $VPS $comando 2>$null) -join "`n"
 }
 
-"`n=== na maquina ==="
-Ver "127.0.0.1:8095/api/health" (Codigo "http://127.0.0.1:8095/api/health") 200
-Ver "127.0.0.1:8095/_/ (painel local, tem de funcionar)" (Codigo "http://127.0.0.1:8095/_/") 200
+"=== os servicos, na VPS ==="
+foreach ($s in "nossa-casa", "cloudflared") {
+  $x = (NaVps "systemctl is-active $s").Trim()
+  Ver $s $(if ($x) { $x } else { "sem resposta do SSH" }) "active"
+}
 
-# !! O TUNEL CONFERE-SE AQUI, e nao la fora.
-#
-# Em 28/09/2026 a rede da empresa comecou a interceptar o TLS e a devolver uma
-# pagina de bloqueio do FortiGuard ("Newly Registered Domain"). Tudo o que esta
-# maquina pedisse ao endereco publico passava a falhar - e este verificador
-# dizia "sem resposta" a cinco linhas seguidas, o que se le como "o tunel caiu".
-# Nao tinha caido: o cloudflared tinha quatro ligacoes ao bordo da Cloudflare.
-#
-# A metrica local do cloudflared responde na maquina e nao atravessa filtro
-# nenhum. E a unica medicao honesta do tunel a partir daqui.
-"`n=== o tunel, medido na maquina (sem atravessar a rede) ==="
+"`n=== na VPS ==="
+$h = NaVps "curl -s http://127.0.0.1:8095/api/health"
+Ver "127.0.0.1:8095/api/health" $(if ($h -match '"code":200') { "200" } else { "sem resposta" }) 200
+
+# O tunel confere-se na metrica local do cloudflared, que nao atravessa o filtro
+# de rede da empresa (28/09/2026: o FortiGuard bloqueia o dominio nesta rede).
 $ligacoes = 0
-try {
-  $m = Invoke-RestMethod -Uri "http://127.0.0.1:20241/ready" -TimeoutSec 10
-  $ligacoes = [int]$m.readyConnections
-} catch { }
+$r = NaVps "curl -s http://127.0.0.1:20241/ready"
+if ($r -match '"readyConnections":(\d+)') { $ligacoes = [int]$Matches[1] }
 Ver "cloudflared com ligacoes ao bordo ($ligacoes)" ($ligacoes -gt 0) "True"
 
-# Ha filtro de rede pelo meio? Distingue-se pelo erro de CONFIANCA no
-# certificado - uma casa em baixo da erro de ligacao, nao de certificado.
+$p = NaVps "ls -d /opt/nossa-casa/pb_data/data.db 2>&1; stat -c %s /opt/nossa-casa/pb_data/data.db"
+$kb = 0
+if ($p -match '(\d+)\s*$') { $kb = [int]([long]$Matches[1] / 1024) }
+# Uma base vazia do PocketBase anda pelos 300 KB; esta casa tem dados.
+Ver "pb_data/data.db tem a casa dentro ($kb KB)" ($kb -gt 500) "True"
+
+# Ha filtro de rede pelo meio? Distingue-se pelo erro de CONFIANCA no certificado.
 $filtro = $false
 try {
   Invoke-WebRequest -Uri "https://casa.anossacasa.app/api/health" -TimeoutSec 20 -UseBasicParsing -ErrorAction Stop | Out-Null
@@ -73,9 +71,7 @@ if ($filtro) {
   "`n=== de fora, pela internet: NAO MEDIDO ==="
   "     A rede desta maquina esta a interceptar o TLS de casa.anossacasa.app."
   "     Nao e o tunel nem a casa: o cloudflared tem $ligacoes ligacao(oes) ao bordo."
-  "     Para ver a pagina do filtro:  curl -k https://casa.anossacasa.app/api/health"
   "     Para medir a serio, correr isto de fora da rede da empresa."
-  if ($ligacoes -le 0) { "     (mas o tunel TAMBEM esta em baixo - ver a linha acima)" }
 } else {
 
 "`n=== de fora, pela internet ==="
@@ -93,28 +89,11 @@ foreach ($c in "episodios_saude", "notas_saude", "receitas_saude", "anexos", "al
 
 }   # fim do bloco que so corre quando NAO ha filtro de rede pelo meio
 
-"`n=== a casa e a verdadeira, e nao uma base vazia ==="
-try {
-  $h = Invoke-RestMethod -Uri "http://127.0.0.1:8095/api/health" -TimeoutSec 15
-  Ver "o servidor local responde" $h.message "API is healthy."
-} catch { Ver "o servidor local responde" "sem resposta" "API is healthy." }
+"`n=== a VPS nao tem portas abertas alem do SSH ==="
+# So o 22 pode estar na firewall; o 80 e o 443 foram fechados a 14/10/2026.
+$ufw = NaVps "ufw status"
+Ver "a firewall permite o 80" $($ufw -match '(?m)^80/tcp\s+ALLOW') "False"
+Ver "a firewall permite o 443" $($ufw -match '(?m)^443/tcp\s+ALLOW') "False"
 
-# A linha acima NAO prova que a base e a certa - so que ha um servidor. Um
-# PocketBase acabado de nascer noutra pasta responde exactamente o mesmo, e foi
-# esse o risco real: o NSSM comeu as aspas dos argumentos e os caminhos desta
-# casa tem um espaco ("Nossa Casa"). Estas duas confirmam a PASTA e o FICHEIRO.
-$raiz = "C:\Users\amadeira\Claude\Projects\Nossa Casa"
-try {
-  $ap = (Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Services\NossaCasaPocketBase\Parameters").AppParameters
-  Ver "o servico aponta ao pb_data desta casa" $($ap -match [regex]::Escape("--dir `"$raiz\pb_data`"")) "True"
-} catch { Ver "o servico aponta ao pb_data desta casa" "nao li o registo" "True" }
-
-$db = "$raiz\pb_data\data.db"
-if (Test-Path $db) {
-  $kb = [int]((Get-Item $db).Length / 1024)
-  # Uma base vazia do PocketBase anda pelos 300 KB; esta casa tem dados.
-  Ver "pb_data\data.db existe e tem a casa dentro ($kb KB)" $($kb -gt 500) "True"
-} else { Ver "pb_data\data.db existe" "NAO EXISTE" "True" }
-
-"`n" + $(if ($falhas) { "FALHAS: $falhas" } else { "TUDO BEM - a casa sobreviveu ao reinicio" })
+"`n" + $(if ($falhas) { "FALHAS: $falhas" } else { "TUDO BEM - a casa esta na VPS e esta como se esperava" })
 exit $(if ($falhas) { 1 } else { 0 })

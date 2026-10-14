@@ -1,5 +1,26 @@
 # Mudar a casa para uma máquina alugada
 
+> ✅ **Feito a 14/10/2026.** A casa vive em `root@136.144.202.8` (Ubuntu 22.04),
+> em `/opt/nossa-casa`, com os serviços `nossa-casa` e `cloudflared` no
+> `systemd`. A firewall deixa o SSH (22) e, desde 14/10/2026, o 80 e o 443: o
+> Nginx serve a app web em `anossacasa.app` diretamente, sem túnel, e com as
+> portas fechadas o site ficava inacessível. O PocketBase (8095) continua só em
+> `127.0.0.1`, e a casa (`casa.anossacasa.app`) continua a chegar pelo túnel.
+> O login por password está desligado. A máquina antiga ficou com os serviços
+> parados e o `pb_data.antes-da-vps` como cópia de regresso.
+>
+> **Os scripts `db/pocketbase/*.mjs` apontam a `127.0.0.1:8095` por omissão**, e
+> esse endereço já não é a casa. Contra a casa a sério, abra um túnel e corra-os
+> como sempre: `ssh -L 8095:127.0.0.1:8095 root@136.144.202.8`.
+> `npm run db:servir` arranca um servidor LOCAL — serve para desenvolver, já não
+> é a casa. Para verificar a casa: `verificar-a-casa.ps1`.
+>
+> **Cópia diária:** o próprio PocketBase faz uma às 03:00 e guarda as 14 mais
+> recentes, em `/opt/nossa-casa/pb_data/backups/` (Settings → Backups). Fica na
+> mesma máquina: para ter uma fora dela, puxe-as com
+> `scp root@136.144.202.8:/opt/nossa-casa/pb_data/backups/*.zip .`.
+> A cópia pontual de 14/10/2026 está em `copias-da-vps/`, na máquina antiga.
+
 > Escrito a 28/09/2026, antes de haver máquina. Decisão do dono da casa: uma VPS
 > alugada, com a Cloudflare à frente. O fornecedor recomendado é a **Amen VPS
 > XS** (1 GB, 1 vCPU, 25 GB NVMe, backups incluídos, 4 €/mês +IVA) — e a razão
@@ -25,12 +46,13 @@ O que isso poupa:
 | DNS na Cloudflare | **não muda** |
 | URIs autorizados na consola da Google | **não mudam** |
 | Certificado TLS | **não há** — é da Cloudflare, como hoje |
-| Portas abertas na VPS | **nenhuma** — nem 80, nem 443, nem 8095 |
+| Portas abertas na VPS | **22, 80 e 443** (SSH e o Nginx da app web) — **nunca a 8095** |
 
 E fica com a mesma propriedade que já provámos: o PocketBase escuta em
-`127.0.0.1`, as regras do túnel tapam `/_/` e os superutilizadores, e a máquina
-não tem porta nenhuma exposta à internet. Numa VPS alugada isso vale mais do que
-aqui, porque uma VPS leva varrimentos de portas desde o primeiro minuto.
+`127.0.0.1`, as regras do túnel tapam `/_/` e os superutilizadores, e a casa só
+se alcança pelo túnel. A app web (`anossacasa.app`) é servida pelo Nginx nas
+portas 80/443, abertas de propósito. Numa VPS alugada convém limitar o resto:
+uma VPS leva varrimentos de portas desde o primeiro minuto.
 
 ⚠ **O que MUDA, e é o preço disto:** o túnel só pode correr num sítio de cada
 vez com as mesmas credenciais. No momento em que arrancar na VPS, a casa da sua
@@ -39,24 +61,21 @@ passos abaixo importa.
 
 ## ⚠ O que muda no comportamento da app, e não é pequeno
 
-Hoje a app marca `http://127.0.0.1:8095`. Na máquina nova tem de marcar
-`https://casa.anossacasa.app`. E isso **fecha o travão da saúde**:
+Antes a app marcava `http://127.0.0.1:8095`. Na máquina nova marca
+`https://casa.anossacasa.app` (`EXPO_PUBLIC_PB_URL`).
+
+**Isto NÃO fecha o travão da saúde.** Desde 30/09/2026 quem decide é a constante
+`A_SAUDE_SOBE = true` em `src/endereco.js`, e não o endereço; e desde 14/10/2026
+a VPS privada conta como «de casa» no `eEnderecoDeCasa`, por decisão do dono:
 
 ```
-eEnderecoDeCasa('http://127.0.0.1:8095')       -> true   (sobe)
-eEnderecoDeCasa('https://casa.anossacasa.app') -> false  (não sobe)
+eEnderecoDeCasa('http://127.0.0.1:8095')       -> true
+eEnderecoDeCasa('https://casa.anossacasa.app') -> true
 ```
 
-É a decisão de 03/09/2026 a cumprir-se — e desta vez com razão, porque um
-servidor alugado não é de casa por medida nenhuma: passa a haver um
-subcontratante que guarda fichas clínicas de menores, e os cinco pontos do
-`db/postgres/README.md` voltam inteiros.
-
-⚠ **E fechar o travão sem mais nada PARTE O APAGAMENTO.** O
-`apagarEpisodioDeSaude` chama o `recusaSaude` antes de falar com o servidor: com
-o travão fechado, rebenta, a app julga que apagou, e a consulta fica no
-servidor. Isso tem de estar resolvido **antes** da mudança — está na lista dos
-seis caminhos, e é o número 4.
+Resultado: o envio e o apagamento da saúde comportam-se como antes. Ficam por
+confirmar na VPS, a correr: o login com Google, a app num telemóvel com o
+endereço novo, e o envio e o apagamento de uma ficha de saúde.
 
 **Antes de migrar, os 22 registos clínicos que já estão no servidor têm de ser
 decididos.** Ficam, ou saem? Se ficarem, viajam para a máquina alugada dentro do
