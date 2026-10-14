@@ -35,7 +35,7 @@ const s = (p) => ({ password: p, passwordConfirm: p });
 
 const rita  = await mk('Rita',  'admin',   { email: 'rita@x.pt',  ...s('palavra-longa-1') });
 const tomas = await mk('Tomas', 'adulto',  { email: 'tomas@x.pt', ...s('palavra-longa-2') });
-const leo   = await mk('Leo',   'crianca', { ...s('1357') });
+const leo   = await mk('Leo',   'crianca', { ...s('135790') });
 
 await auth.entrarAdulto('rita@x.pt', 'palavra-longa-1');
 const daRita = sync.sessao();
@@ -144,7 +144,7 @@ console.log('\n── e quem os vê ──');
 await prova('⚠ uma CRIANÇA não recebe os equipamentos — ausente, não escondido', async () => {
   // A regra é `casa && adulto`: o que a casa tem e quanto custou não é
   // conversa para as crianças, e o servidor não o devolve.
-  const doLeo = await telemovel(leo.login, '1357');
+  const doLeo = await telemovel(leo.login, '135790');
   igual((await doLeo.collection('equipamentos').getFullList()).length, 0);
   await recusado(() => doLeo.collection('equipamentos').getOne(maquina));
 });
@@ -152,7 +152,7 @@ await prova('⚠ uma CRIANÇA não recebe os equipamentos — ausente, não esco
 await prova('⚠ nem as manutenções', async () => {
   await admin.collection('manutencoes').create({
     casa: casa.id, equipamento: maquina, descricao: 'Revisão anual', a_fazer_ate: '2026-12-01' });
-  const doLeo = await telemovel(leo.login, '1357');
+  const doLeo = await telemovel(leo.login, '135790');
   igual((await doLeo.collection('manutencoes').getFullList()).length, 0);
 });
 

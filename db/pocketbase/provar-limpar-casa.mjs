@@ -32,7 +32,7 @@ const adultoA = await criarMembro(admin, casaA, 'Tomás', 'adulto',
 // O PIN de uma criança tem de ter 4 dígitos — um hook do servidor exige-o, e a
 // primeira versão desta prova ignorava-o. A regra é boa; a prova é que estava
 // a inventar um membro que a casa não aceitaria.
-const PIN_DO_LEO = '4731';
+const PIN_DO_LEO = '473190';
 const criancaA = await criarMembro(admin, casaA, 'Léo', 'crianca',
   { password: PIN_DO_LEO, passwordConfirm: PIN_DO_LEO, verified: true });
 const adminB = await criarMembro(admin, casaB, 'Sofia', 'admin',

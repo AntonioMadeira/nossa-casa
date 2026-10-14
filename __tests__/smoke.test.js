@@ -253,12 +253,12 @@ describe('🔥 Smoke Tests — Nossa Casa', () => {
       });
       const recusa = (pin) => c.st.pinError('Léo', pin) !== null;
 
-      expect(recusa('1111')).toBe(true);    // quatro iguais
-      expect(recusa('1234')).toBe(true);    // sequência
-      expect(recusa('9876')).toBe(true);    // sequência ao contrário
-      expect(recusa('123')).toBe(true);     // curto de mais
-      expect(recusa('12a4')).toBe(true);    // não são dígitos
-      expect(recusa('4820')).toBe(false);   // este serve
+      expect(recusa('111111')).toBe(true);  // seis iguais
+      expect(recusa('123456')).toBe(true);  // sequência
+      expect(recusa('987654')).toBe(true);  // sequência ao contrário
+      expect(recusa('1234')).toBe(true);    // 4 dígitos já não chega
+      expect(recusa('12a456')).toBe(true);  // não são dígitos
+      expect(recusa('482016')).toBe(false); // este serve
     });
   });
 

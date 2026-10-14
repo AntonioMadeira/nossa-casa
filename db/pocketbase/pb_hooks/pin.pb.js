@@ -39,8 +39,8 @@ routerAdd('POST', '/api/casa/pin', (e) => {
   // O cliente ja a verifica (`pinError`), e isso e para a pessoa saber porque
   // e que o PIN nao serve enquanto o escreve. Isto e outra coisa: um cliente
   // pode ser trocado, e a regra que protege a casa nao pode viver so nele.
-  if (!/^[0-9]{4}$/.test(pin)) throw new BadRequestError('O PIN tem de ter 4 digitos.');
-  if (/^([0-9])\1{3}$/.test(pin)) throw new BadRequestError('Nao pode ter os quatro digitos iguais.');
+  if (!/^[0-9]{6}$/.test(pin)) throw new BadRequestError('O PIN tem de ter 6 digitos.');
+  if (/^([0-9])\1{5}$/.test(pin)) throw new BadRequestError('Nao pode ter os seis digitos iguais.');
   const seq = '0123456789';
   const inv = '9876543210';
   if (seq.indexOf(pin) >= 0 || inv.indexOf(pin) >= 0) {
@@ -110,8 +110,8 @@ routerAdd('POST', '/api/casa/pin/proprio', (e) => {
 
   // A mesma qualidade da rota de cima -- repetida aqui porque cada handler do
   // JSVM corre isolado e nao ve funcoes de fora.
-  if (!/^[0-9]{4}$/.test(novo)) throw new BadRequestError('O PIN tem de ter 4 digitos.');
-  if (/^([0-9])\1{3}$/.test(novo)) throw new BadRequestError('Nao pode ter os quatro digitos iguais.');
+  if (!/^[0-9]{6}$/.test(novo)) throw new BadRequestError('O PIN tem de ter 6 digitos.');
+  if (/^([0-9])\1{5}$/.test(novo)) throw new BadRequestError('Nao pode ter os seis digitos iguais.');
   if ('0123456789'.indexOf(novo) >= 0 || '9876543210'.indexOf(novo) >= 0) {
     throw new BadRequestError('Nao pode ser uma sequencia.');
   }

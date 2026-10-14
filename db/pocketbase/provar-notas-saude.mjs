@@ -38,12 +38,12 @@ const s = (p) => ({ password: p, passwordConfirm: p });
 
 const rita  = await mk('rita',  'admin',   { email: 'rita@x.pt',  ...s('palavra-longa-1'), verified: true });
 const tomas = await mk('tomas', 'adulto',  { email: 'tomas@x.pt', ...s('palavra-longa-2'), verified: true });
-const leo   = await mk('leo',   'crianca', { ...s('1357'), verified: true });
+const leo   = await mk('leo',   'crianca', { ...s('135790'), verified: true });
 // ⚠ Uma SEGUNDA criança, e não é enfeite: sem ela não se pode provar o caso que
 // interessa — uma criança a escrever na ficha de OUTRA. Com uma criança só, a
 // única coisa provável é ela na sua própria ficha, e isso deixa de fora o medo
 // que uma casa com dois filhos tem.
-const mia   = await mk('mia',   'crianca', { ...s('2468'), verified: true });
+const mia   = await mk('mia',   'crianca', { ...s('246813'), verified: true });
 
 const ep = (membro, especialidade) => admin.collection('episodios_saude').create({
   casa: casa.id, membro, especialidade, dia: '2026-08-28' });
@@ -54,8 +54,8 @@ const epMia   = await ep(mia.id,   'Dentista');
 
 const cRita  = await como('rita@x.pt',  'palavra-longa-1');
 const cTomas = await como('tomas@x.pt', 'palavra-longa-2');
-const cLeo   = await como(leo.login, '1357');
-const cMia   = await como(mia.login, '2468');
+const cLeo   = await como(leo.login, '135790');
+const cMia   = await como(mia.login, '246813');
 
 // ── 1. A visibilidade herda-se do episódio ───────────────────────────────────
 console.log('\n── a nota vê-se se e só se a consulta se vê ──');

@@ -233,13 +233,13 @@ describe('Gerir a casa sem servidor', () => {
       await TestRenderer.act(async () => { r = await ler().acrescentarMembro(campos); });
       return r;
     };
-    expect(await dizer({ nome: '  ', papel: 'crianca', segredo: '2470' }))
+    expect(await dizer({ nome: '  ', papel: 'crianca', segredo: '482016' }))
       .toBe('O membro precisa de um nome.');
-    expect(await dizer({ nome: 'Léo', papel: 'crianca', segredo: '2470' }))
+    expect(await dizer({ nome: 'Léo', papel: 'crianca', segredo: '482016' }))
       .toMatch(/Já existe/);
-    expect(await dizer({ nome: 'Ana', papel: 'crianca', segredo: '1111' }))
-      .toMatch(/quatro dígitos iguais/);
-    expect(await dizer({ nome: 'Ana', papel: 'crianca', segredo: '1234' }))
+    expect(await dizer({ nome: 'Ana', papel: 'crianca', segredo: '111111' }))
+      .toMatch(/seis dígitos iguais/);
+    expect(await dizer({ nome: 'Ana', papel: 'crianca', segredo: '123456' }))
       .toMatch(/sequência/);
     expect(await dizer({ nome: 'Ana', papel: 'adulto', email: 'não-é-email', segredo: 'palavra-passe' }))
       .toMatch(/endereço de e-mail/);

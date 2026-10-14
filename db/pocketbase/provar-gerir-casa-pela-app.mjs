@@ -67,7 +67,7 @@ await prova('renomearCasa muda o nome, e o nome muda mesmo', async () => {
 let dina = null;
 await prova('acrescentarMembro cria uma criança, com todos os campos no sítio', async () => {
   dina = await sync.acrescentarMembro({
-    casa: casa.id, nome: 'Dina', papel: 'crianca', pin: '3691', fem: true,
+    casa: casa.id, nome: 'Dina', papel: 'crianca', pin: '369152', fem: true,
   });
   const lida = await admin.collection('membros').getOne(dina.id);
   // Um a um: é assim que se apanha um campo ignorado em silêncio.
@@ -81,7 +81,7 @@ await prova('acrescentarMembro cria uma criança, com todos os campos no sítio'
 await prova('e a criança entra com o PIN que lhe foi dado', async () => {
   const c = await import('pocketbase');
   const cliente = new (c.default)(URL);
-  await cliente.collection('membros').authWithPassword(`${casa.id}_dina`, '3691');
+  await cliente.collection('membros').authWithPassword(`${casa.id}_dina`, '369152');
   igual(cliente.authStore.record.nome, 'Dina');
 });
 
@@ -120,7 +120,7 @@ await prova('renomear muda o nome E o login, pela camada da app', async () => {
 await prova('e a criança renomeada entra com o login novo', async () => {
   const c = await import('pocketbase');
   const cliente = new (c.default)(URL);
-  await cliente.collection('membros').authWithPassword(`${casa.id}_diana`, '3691');
+  await cliente.collection('membros').authWithPassword(`${casa.id}_diana`, '369152');
   igual(cliente.authStore.record.nome, 'Diana');
 });
 
@@ -135,11 +135,11 @@ console.log('\n── e as recusas chegam cá acima ──');
 
 await prova('acrescentar um nome que já existe rebenta, não passa em silêncio', () =>
   recusa('repetir o nome', () => sync.acrescentarMembro({
-    casa: casa.id, nome: 'Ana', papel: 'crianca', pin: '5827' })));
+    casa: casa.id, nome: 'Ana', papel: 'crianca', pin: '582714' })));
 
 await prova('um PIN óbvio é recusado pelo servidor, não só pelo ecrã', () =>
   recusa('PIN de quatro iguais', () => sync.acrescentarMembro({
-    casa: casa.id, nome: 'Filipa', papel: 'crianca', pin: '1111' })));
+    casa: casa.id, nome: 'Filipa', papel: 'crianca', pin: '111111' })));
 
 await prova('tirar a última administração rebenta', async () => {
   // A Eva passou a admin acima; volta a adulto para a Ana ficar sozinha

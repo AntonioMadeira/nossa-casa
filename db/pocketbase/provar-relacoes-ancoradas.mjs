@@ -177,7 +177,7 @@ const mk = (c, nome, papel, extra) => admin.collection('membros').create({
   nome, login: `${c.id}_${nome}`, casa: c.id, papel, verified: true, ...extra });
 
 const rita = await mk(casa, 'Rita', 'admin', { email: 'rita-anc@x.pt', ...s('palavra-longa-1') });
-const leo  = await mk(casa, 'Leo',  'crianca', { ...s('1357') });
+const leo  = await mk(casa, 'Leo',  'crianca', { ...s('135790') });
 const nela = await mk(outra, 'Vizinha', 'admin', { email: 'viz-anc@x.pt', ...s('palavra-longa-9') });
 
 const cVizinha = new PocketBase(URL);
@@ -223,7 +223,7 @@ deles.receita = await admin.collection('receitas_saude').create({
   casa: outra.id, episodio: deles.episodio.id, nome: 'Vitaminas' });
 // E o que os catorze ataques às relações para `membros` precisam DELA: uma
 // criança, uma tarefa, um segundo envelope, uma meta (12/09/2026).
-deles.crianca = await mk(outra, 'Filho', 'crianca', { ...s('2468') });
+deles.crianca = await mk(outra, 'Filho', 'crianca', { ...s('246813') });
 deles.tarefa = await admin.collection('tarefas').create({ casa: outra.id, titulo: 'Arrumar', atribuido_a: deles.crianca.id, pontos: 1 });
 deles.envelope2 = await admin.collection('envelopes').create({ casa: outra.id, nome: 'Lazer deles', limite_base: 50 });
 deles.meta = await admin.collection('metas').create({ casa: outra.id, nome: 'Bicicleta', alvo: 300 });

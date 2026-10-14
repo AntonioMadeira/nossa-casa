@@ -21,7 +21,7 @@ const s = (p) => ({ password: p, passwordConfirm: p });
 
 const rita  = await mk('Rita',  'admin',   { email: 'rita-med@x.pt',  ...s('palavra-longa-1') });
 const tomas = await mk('Tomás', 'adulto',  { email: 'tomas-med@x.pt', ...s('palavra-longa-2') });
-const leo   = await mk('Leo',   'crianca', { ...s('1357') });
+const leo   = await mk('Leo',   'crianca', { ...s('135790') });
 
 const telemovel = async (id, senha) => {
   const c = new PocketBase(URL);
@@ -30,7 +30,7 @@ const telemovel = async (id, senha) => {
   return c;
 };
 const doTomas = await telemovel('tomas-med@x.pt', 'palavra-longa-2');
-const doLeo = await telemovel(`${casa.id}_Leo`, '1357');
+const doLeo = await telemovel(`${casa.id}_Leo`, '135790');
 
 await auth.entrarAdulto('rita-med@x.pt', 'palavra-longa-1');
 const daRita = sync.sessao();

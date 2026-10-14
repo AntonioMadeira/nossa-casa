@@ -20,7 +20,7 @@ const membro = (nome, papel, extra) => admin.collection('membros').create({
 });
 const rita  = await membro('Rita',  'admin',   { email: 'rita@exemplo.pt',  password: 'palavra-longa-1', passwordConfirm: 'palavra-longa-1', verified: true });
 const tomas = await membro('Tomas', 'adulto',  { email: 'tomas@exemplo.pt', password: 'palavra-longa-2', passwordConfirm: 'palavra-longa-2', verified: true });
-const leo   = await membro('Leo',   'crianca', { password: '1357', passwordConfirm: '1357', verified: true });
+const leo   = await membro('Leo',   'crianca', { password: '135790', passwordConfirm: '135790', verified: true });
 
 const envelope = await admin.collection('envelopes').create({ casa: casa.id, nome: 'Mercearia', limite_base: 550 });
 await admin.collection('despesas').create({ casa: casa.id, envelope: envelope.id, valor: 12.5, pagador: tomas.id, descricao: 'Pão', idem_key: 'd1' });
@@ -49,19 +49,19 @@ const como = async (identidade, senha) => {
 
 console.log('\n── §3: o PIN é verificado no servidor ──');
 await prova('a criança entra com o PIN certo', async () => {
-  const c = await como(leo.login, '1357');
+  const c = await como(leo.login, '135790');
   igual(c.authStore.record.nome, 'Leo');
 });
 await prova('o PIN errado é recusado pelo servidor', () =>
-  recusado(() => como(leo.login, '9999')));
+  recusado(() => como(leo.login, '999999')));
 await prova('o hash do PIN nunca chega ao cliente', async () => {
-  const c = await como(leo.login, '1357');
+  const c = await como(leo.login, '135790');
   const r = JSON.stringify(c.authStore.record);
   if (/password|tokenKey|1357/.test(r)) throw new Error('o registo devolvido expõe segredo');
 });
 
 console.log('\n── §5: visibilidade por registo ──');
-const cLeo = await como(leo.login, '1357');
+const cLeo = await como(leo.login, '135790');
 const cRita = await como('rita@exemplo.pt', 'palavra-longa-1');
 const cTomas = await como('tomas@exemplo.pt', 'palavra-longa-2');
 const cVizinho = await como('estranho@exemplo.pt', 'palavra-longa-3');
@@ -126,7 +126,7 @@ console.log('\n── quem acrescenta e tira membros da casa ──');
 await prova('a administração acrescenta um membro à sua casa', async () => {
   const m = await cRita.collection('membros').create({
     nome: 'Mia', login: `${casa.id}_mia`, casa: casa.id, papel: 'crianca',
-    password: '2470', passwordConfirm: '2470', fem: true,
+    password: '247015', passwordConfirm: '247015', fem: true,
   });
   igual(m.nome, 'Mia');
   await admin.collection('membros').delete(m.id);
@@ -138,7 +138,7 @@ await prova('um adulto que não administra NÃO acrescenta', () =>
 await prova('uma criança NÃO acrescenta', () =>
   recusado(() => cLeo.collection('membros').create({
     nome: 'Amigo', login: `${casa.id}_amigo`, casa: casa.id, papel: 'crianca',
-    password: '9753', passwordConfirm: '9753' })));
+    password: '975318', passwordConfirm: '975318' })));
 await prova('a administração de outra casa NÃO acrescenta a esta', () =>
   recusado(() => cVizinho.collection('membros').create({
     nome: 'Cavalo', login: `${casa.id}_cavalo`, casa: casa.id, papel: 'adulto',
@@ -146,7 +146,7 @@ await prova('a administração de outra casa NÃO acrescenta a esta', () =>
 await prova('o género gramatical é do membro, e vem do servidor', async () => {
   const m = await cRita.collection('membros').create({
     nome: 'Ana', login: `${casa.id}_ana`, casa: casa.id, papel: 'crianca',
-    password: '8642', passwordConfirm: '8642', fem: true,
+    password: '864213', passwordConfirm: '864213', fem: true,
   });
   const lido = await cRita.collection('membros').getOne(m.id);
   igual(lido.fem, true, 'o campo não voltou como foi gravado');

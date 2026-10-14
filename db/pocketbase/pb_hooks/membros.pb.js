@@ -12,12 +12,12 @@
 function validarMembro(e) {
   const MIN_ADULTO = 10;
 
-  // Um PIN de quatro dígitos tem 10 000 combinações. Estas regras não o tornam
-  // forte — tornam-no não-óbvio, que é o que quatro dígitos permitem. Quem o
+  // Um PIN de seis dígitos tem 1 000 000 de combinações (os de quatro, 10 000).
+  // Estas regras não o tornam forte — tornam-no não-óbvio. Quem o
   // torna impraticável de forçar é o hash lento do servidor.
   function pinInvalido(pin) {
-    if (!/^\d{4}$/.test(pin)) return 'O PIN tem de ter 4 dígitos.';
-    if (/^(\d)\1{3}$/.test(pin)) return 'Não pode ter os quatro dígitos iguais.';
+    if (!/^\d{6}$/.test(pin)) return 'O PIN tem de ter 6 dígitos.';
+    if (/^(\d)\1{5}$/.test(pin)) return 'Não pode ter os seis dígitos iguais.';
     if ('0123456789'.indexOf(pin) !== -1) return 'Não pode ser uma sequência.';
     if ('9876543210'.indexOf(pin) !== -1) return 'Não pode ser uma sequência.';
     return null;

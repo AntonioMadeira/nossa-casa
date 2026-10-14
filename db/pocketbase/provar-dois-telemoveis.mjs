@@ -23,7 +23,7 @@ const rita = await membro('Rita', 'admin', {
   email: 'rita@exemplo.pt', password: 'palavra-longa-1', passwordConfirm: 'palavra-longa-1', verified: true });
 const tomas = await membro('Tomas', 'adulto', {
   email: 'tomas@exemplo.pt', password: 'palavra-longa-2', passwordConfirm: 'palavra-longa-2', verified: true });
-const leo = await membro('Leo', 'crianca', { password: '1357', passwordConfirm: '1357', verified: true });
+const leo = await membro('Leo', 'crianca', { password: '135790', passwordConfirm: '135790', verified: true });
 
 // Dois clientes distintos: dois telemóveis, cada um com a sua sessão.
 const telemovel = async (identidade, senha) => {
@@ -102,7 +102,7 @@ await prova('nem apaga um movimento para «corrigir» o saldo', async () => {
 console.log('\n── a criança vê o seu, e só o seu ──');
 
 await prova('o Léo vê o saldo dele mas não mexe nele', async () => {
-  const c = await telemovel(leo.login, '1357');
+  const c = await telemovel(leo.login, '135790');
   const v = await c.collection('v_cofre_saldo').getFullList();
   igual(v.length, 1);
   igual(v[0].membro, leo.id);

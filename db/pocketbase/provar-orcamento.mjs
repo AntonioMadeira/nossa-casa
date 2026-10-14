@@ -38,7 +38,7 @@ const s = (p) => ({ password: p, passwordConfirm: p });
 
 const rita  = await mk('Rita',  'admin',  { email: 'rita@x.pt',  ...s('palavra-longa-1') });
 const tomas = await mk('Tomas', 'admin',  { email: 'tomas@x.pt', ...s('palavra-longa-2') });
-const leo   = await mk('Leo',   'crianca', { ...s('1357') });
+const leo   = await mk('Leo',   'crianca', { ...s('135790') });
 
 await auth.entrarAdulto('rita@x.pt', 'palavra-longa-1');
 const daRita = sync.sessao();
@@ -103,13 +103,13 @@ await prova('alterar muda a linha, e apagar apaga-a', async () => {
 console.log('\n── e quem os vê ──');
 
 await prova('⚠ uma CRIANÇA não recebe o orçamento — ausente, não escondido', async () => {
-  const doLeo = await telemovel(leo.login, '1357');
+  const doLeo = await telemovel(leo.login, '135790');
   igual((await doLeo.collection('envelopes').getFullList()).length, 0);
   await recusado(() => doLeo.collection('envelopes').getOne(mercearia));
 });
 
 await prova('⚠ nem as transferências, nem as despesas', async () => {
-  const doLeo = await telemovel(leo.login, '1357');
+  const doLeo = await telemovel(leo.login, '135790');
   igual((await doLeo.collection('transferencias').getFullList()).length, 0);
   igual((await doLeo.collection('despesas').getFullList()).length, 0);
 });

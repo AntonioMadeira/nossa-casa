@@ -23,7 +23,7 @@ const rita = await admin.collection('membros').create({
   email: 'rita@x.pt', password: 'palavra-longa-1', passwordConfirm: 'palavra-longa-1', verified: true });
 const leo = await admin.collection('membros').create({
   nome: 'leo', login: `${casa.id}_leo`, casa: casa.id, papel: 'crianca',
-  password: '1357', passwordConfirm: '1357', verified: true });
+  password: '135790', passwordConfirm: '135790', verified: true });
 await admin.collection('envelopes').create({ casa: casa.id, nome: 'Mercearia', limite_base: 550 });
 
 // ── Provas ───────────────────────────────────────────────────────────────────
@@ -120,7 +120,7 @@ await prova('⚠ a fatura de um equipamento sobe como ficheiro, e lê-se de volt
 console.log('\n── a criança, pelo mesmo cliente ──');
 await prova('entra pelo login com o PIN', async () => {
   auth.sair();
-  await auth.entrarCrianca(leo.login, '1357');
+  await auth.entrarCrianca(leo.login, '135790');
   igual(auth.membro().nome, 'leo');
 });
 await prova('e o orçamento vem VAZIO — a regra é do servidor', async () => {

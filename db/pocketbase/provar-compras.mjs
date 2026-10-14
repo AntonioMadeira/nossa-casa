@@ -38,7 +38,7 @@ const s = (p) => ({ password: p, passwordConfirm: p });
 
 const rita  = await mk('Rita',  'admin',   { email: 'rita@x.pt',  ...s('palavra-longa-1') });
 const tomas = await mk('Tomas', 'adulto',  { email: 'tomas@x.pt', ...s('palavra-longa-2') });
-const leo   = await mk('Leo',   'crianca', { ...s('1357') });
+const leo   = await mk('Leo',   'crianca', { ...s('135790') });
 
 await auth.entrarAdulto('rita@x.pt', 'palavra-longa-1');
 const daRita = sync.sessao();
@@ -97,7 +97,7 @@ await prova('e o telemóvel do Tomás vê-os', async () => {
 await prova('⚠ uma CRIANÇA também vê a lista, e pode pedir', async () => {
   // A lista é de todos: as crianças também pedem artigos. É a regra escrita
   // na coleção, e não um descuido.
-  const doLeo = await telemovel(leo.login, '1357');
+  const doLeo = await telemovel(leo.login, '135790');
   igual((await doLeo.collection('artigos').getFullList()).length, 2);
   const r = await doLeo.collection('artigos').create({
     casa: casa.id, lista, rotulo: 'Cereais', seccao: 2, pedido_por: leo.id });
@@ -329,7 +329,7 @@ await prova('a lista ABERTA não entra no histórico', async () => {
 console.log('\n── as prendas: o que a criança NÃO recebe ──');
 
 let prenda = null;
-const doLeo = await telemovel(`${casa.id}_Leo`, '1357');
+const doLeo = await telemovel(`${casa.id}_Leo`, '135790');
 
 await prova('a Rita põe uma prenda na lista, «só os adultos»', async () => {
   const r = await comId(sync.artigoDeCompras({

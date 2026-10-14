@@ -46,7 +46,7 @@ const s = (p) => ({ password: p, passwordConfirm: p });
 
 const rita  = await mk('Rita',  'admin',   { email: 'rita-pts@x.pt',  ...s('palavra-longa-1') });
 const tomas = await mk('Tomas', 'adulto',  { email: 'tomas-pts@x.pt', ...s('palavra-longa-2') });
-const leo   = await mk('Leo',   'crianca', { ...s('1357') });
+const leo   = await mk('Leo',   'crianca', { ...s('135790') });
 
 await auth.entrarAdulto('rita-pts@x.pt', 'palavra-longa-1');
 const daRita = sync.sessao();
@@ -142,7 +142,7 @@ console.log('\n── e quem pode escrever no cofre ──');
 await prova('⚠ uma criança não escreve no seu próprio cofre', async () => {
   const doLeo = new PocketBase(URL);
   doLeo.autoCancellation(false);   // uma escrita não se perde por chegar outra atrás
-  await doLeo.collection('membros').authWithPassword(leo.login, '1357');
+  await doLeo.collection('membros').authWithPassword(leo.login, '135790');
   let passou = false;
   try {
     await doLeo.collection('cofre_movimentos').create({

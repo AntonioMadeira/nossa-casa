@@ -38,7 +38,7 @@ const mk = (nome, papel, extra) => admin.collection('membros').create({
 const s = (p) => ({ password: p, passwordConfirm: p });
 
 const rita = await mk('Rita', 'admin', { email: 'rita@x.pt', ...s('palavra-longa-1') });
-const leo  = await mk('Leo',  'crianca', { ...s('1357') });
+const leo  = await mk('Leo',  'crianca', { ...s('135790') });
 
 await auth.entrarAdulto('rita@x.pt', 'palavra-longa-1');
 const daRita = sync.sessao();
@@ -167,7 +167,7 @@ await prova('alterar os limites do mês altera a LINHA dele', async () => {
 console.log('\n── e quem pode mexer no mês ──');
 
 await prova('⚠ uma CRIANÇA não vê os meses — é orçamento', async () => {
-  const doLeo = await telemovel(leo.login, '1357');
+  const doLeo = await telemovel(leo.login, '135790');
   igual((await doLeo.collection('meses').getFullList()).length, 0);
 });
 

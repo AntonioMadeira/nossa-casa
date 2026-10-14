@@ -20,8 +20,8 @@ const s = (p) => ({ password: p, passwordConfirm: p });
 
 const rita  = await mk('Rita',  'admin',   { email: 'rita-tr@x.pt',  ...s('palavra-longa-1') });
 const tomas = await mk('Tomás', 'adulto',  { email: 'tomas-tr@x.pt', ...s('palavra-longa-2') });
-const leo   = await mk('Leo',   'crianca', { ...s('1357') });
-const mia   = await mk('Mia',   'crianca', { ...s('2468') });
+const leo   = await mk('Leo',   'crianca', { ...s('135790') });
+const mia   = await mk('Mia',   'crianca', { ...s('246813') });
 
 const tarefa = (titulo, quem) => admin.collection('tarefas').create({
   casa: casa.id, titulo, atribuido_a: quem.id, pontos: 2, recorrencia: 'diaria' });
@@ -38,15 +38,15 @@ const telemovel = async (id, senha) => {
   return c;
 };
 const doTomas = await telemovel('tomas-tr@x.pt', 'palavra-longa-2');
-const doLeo = await telemovel(`${casa.id}_Leo`, '1357');
-const doMia = await telemovel(`${casa.id}_Mia`, '2468');
+const doLeo = await telemovel(`${casa.id}_Leo`, '135790');
+const doMia = await telemovel(`${casa.id}_Mia`, '246813');
 
 const hoje = new Date().toISOString().slice(0, 10);
 const diaHa = (n) => new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
 const agora = new Date().toISOString();
 
 // O Léo entra pela camada de ligação, como a app: é por ela que propõe.
-await auth.entrarCrianca(`${casa.id}_Leo`, '1357');
+await auth.entrarCrianca(`${casa.id}_Leo`, '135790');
 const doLeoNaApp = sync.sessao();
 
 console.log('\n── propor ──');

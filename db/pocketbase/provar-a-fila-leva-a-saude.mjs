@@ -56,7 +56,7 @@ const rita = await admin.collection('membros').create({
 });
 const leo = await admin.collection('membros').create({
   nome: 'Leo', login: `${casa.id}_leo`, casa: casa.id, papel: 'crianca',
-  password: '1357', passwordConfirm: '1357', verified: true,
+  password: '135790', passwordConfirm: '135790', verified: true,
 });
 await admin.collection('envelopes').create({ casa: casa.id, nome: 'Mercearia', limite_base: 550 });
 

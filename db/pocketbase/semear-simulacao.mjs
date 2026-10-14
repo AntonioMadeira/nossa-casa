@@ -125,8 +125,8 @@ const membro = async (nome, papel, extra = {}) => {
 
 const rita  = await membro('Rita',  'admin',   { email: 'rita.simulacao@exemplo.pt', fem: true });
 const tomas = await membro('Tomás', 'adulto',  { email: 'tomas.simulacao@exemplo.pt' });
-const leo   = await membro('Léo',   'crianca', { pin: '2470' });
-const mia   = await membro('Mia',   'crianca', { pin: '1357', fem: true });
+const leo   = await membro('Léo',   'crianca', { pin: '247015' });
+const mia   = await membro('Mia',   'crianca', { pin: '135790', fem: true });
 // O dono da casa é quem já lá estava — o primeiro adulto que não é destes.
 const dono = jaLa.find(m => m.papel !== 'crianca') || rita;
 console.log(`  (o dono da casa continua a ser ${dono.nome})`);

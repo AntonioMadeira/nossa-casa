@@ -226,9 +226,9 @@ const membro = async ({ nome, papel, email, senha, pin, fem, cor, figura }) => {
 };
 const rita  = await membro({ nome: 'Rita',  papel: 'admin',   email: 'rita@simulacao.pt',  senha: 'simulacao-rita-1',  fem: true, cor: '#8B4EE0', figura: 'cachos' });
 const tomas = await membro({ nome: 'Tomás', papel: 'adulto',  email: 'tomas@simulacao.pt', senha: 'simulacao-tomas-2', cor: '#13ADB3', figura: 'oculos' });
-const leo   = await membro({ nome: 'Léo',   papel: 'crianca', pin: '1357', cor: '#4A8FE0', figura: 'raposa' });
-const mia   = await membro({ nome: 'Mia',   papel: 'crianca', pin: '2468', fem: true, cor: '#E0568B', figura: 'coruja' });
-const max   = await membro({ nome: 'Maximiliano-Afonso', papel: 'crianca', pin: '9753', cor: '#2E9E5B', figura: 'foguete' });
+const leo   = await membro({ nome: 'Léo',   papel: 'crianca', pin: '135790', cor: '#4A8FE0', figura: 'raposa' });
+const mia   = await membro({ nome: 'Mia',   papel: 'crianca', pin: '246813', fem: true, cor: '#E0568B', figura: 'coruja' });
+const max   = await membro({ nome: 'Maximiliano-Afonso', papel: 'crianca', pin: '975318', cor: '#2E9E5B', figura: 'foguete' });
 const TODOS = [rita, tomas, leo, mia, max];
 console.log(`  5 membros${camposMembro.has('figura') ? ', com figura' : ' (sem campo de avatar neste servidor)'}`);
 

@@ -45,8 +45,8 @@ export async function casaDaHistoria(nome) {
   const marca = casa.id.slice(0, 6);
   const rita = await mk('Rita', 'admin', { email: `rita-${marca}@x.pt`, ...s('palavra-longa-1') });
   const tomas = await mk('Tomás', 'adulto', { email: `tomas-${marca}@x.pt`, ...s('palavra-longa-2') });
-  const leo = await mk('Léo', 'crianca', { ...s('1357') });
-  const mia = await mk('Mia', 'crianca', { fem: true, ...s('2468') });
+  const leo = await mk('Léo', 'crianca', { ...s('135790') });
+  const mia = await mk('Mia', 'crianca', { fem: true, ...s('246813') });
 
   const telemovel = async (id, senha) => {
     const c = new PocketBase(URL);
@@ -56,16 +56,16 @@ export async function casaDaHistoria(nome) {
   };
   const de = {
     tomas: await telemovel(`tomas-${marca}@x.pt`, 'palavra-longa-2'),
-    leo: await telemovel(`${casa.id}_Léo`, '1357'),
-    mia: await telemovel(`${casa.id}_Mia`, '2468'),
+    leo: await telemovel(`${casa.id}_Léo`, '135790'),
+    mia: await telemovel(`${casa.id}_Mia`, '246813'),
   };
 
   // A sessão da APP, trocada de pessoa para pessoa. Devolve `{ casa, membro }`.
   const como = {
     rita: async () => { await auth.entrarAdulto(`rita-${marca}@x.pt`, 'palavra-longa-1'); return sync.sessao(); },
     tomas: async () => { await auth.entrarAdulto(`tomas-${marca}@x.pt`, 'palavra-longa-2'); return sync.sessao(); },
-    leo: async () => { await auth.entrarCrianca(`${casa.id}_Léo`, '1357'); return sync.sessao(); },
-    mia: async () => { await auth.entrarCrianca(`${casa.id}_Mia`, '2468'); return sync.sessao(); },
+    leo: async () => { await auth.entrarCrianca(`${casa.id}_Léo`, '135790'); return sync.sessao(); },
+    mia: async () => { await auth.entrarCrianca(`${casa.id}_Mia`, '246813'); return sync.sessao(); },
   };
 
   // Uma segunda casa, com uma adulta, para o «de fora ninguém entra».

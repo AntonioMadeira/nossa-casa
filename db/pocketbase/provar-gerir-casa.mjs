@@ -27,7 +27,7 @@ const bruno = await membro('Bruno', 'adulto', {
   email: 'bruno@exemplo.pt', password: 'palavra-longa-2', passwordConfirm: 'palavra-longa-2',
   verified: true });
 const carlos = await membro('Carlos', 'crianca', {
-  password: '2470', passwordConfirm: '2470', verified: true });
+  password: '247015', passwordConfirm: '247015', verified: true });
 
 // Uma segunda casa, para provar que a gestão de uma não chega à outra.
 const outra = await criarCasa(admin, 'Vizinhos');
@@ -76,7 +76,7 @@ let dina = null;
 await prova('a administração acrescenta uma criança, com PIN', async () => {
   dina = await daAna.collection('membros').create({
     casa: casa.id, nome: 'Dina', papel: 'crianca', fem: true,
-    login: `${casa.id}_dina`, password: '3691', passwordConfirm: '3691',
+    login: `${casa.id}_dina`, password: '369152', passwordConfirm: '369152',
   });
   igual(dina.papel, 'crianca');
   // O PIN não volta em claro de lado nenhum
@@ -86,7 +86,7 @@ await prova('a administração acrescenta uma criança, com PIN', async () => {
 await prova('a criança nova entra com o seu PIN', async () => {
   const c = new PocketBase(URL);
   c.autoCancellation(false);   // uma escrita não se perde por chegar outra atrás
-  await c.collection('membros').authWithPassword(`${casa.id}_dina`, '3691');
+  await c.collection('membros').authWithPassword(`${casa.id}_dina`, '369152');
   igual(c.authStore.record.nome, 'Dina');
 });
 
@@ -117,7 +117,7 @@ await prova('dois membros não podem ter o mesmo login', () =>
   recusa('repetir o login', () =>
     daAna.collection('membros').create({
       casa: casa.id, nome: 'Dina', papel: 'crianca', login: `${casa.id}_dina`,
-      password: '5827', passwordConfirm: '5827',
+      password: '582714', passwordConfirm: '582714',
     })));
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -160,10 +160,10 @@ await prova('a administração muda o nome, e o login acompanha', async () => {
 await prova('a criança entra com o login novo, e não com o antigo', async () => {
   const c = new PocketBase(URL);
   c.autoCancellation(false);   // uma escrita não se perde por chegar outra atrás
-  await c.collection('membros').authWithPassword(`${casa.id}_diana`, '3691');
+  await c.collection('membros').authWithPassword(`${casa.id}_diana`, '369152');
   igual(c.authStore.record.nome, 'Diana');
   await recusa('entrar com o login antigo', () =>
-    new PocketBase(URL).collection('membros').authWithPassword(`${casa.id}_dina`, '3691'));
+    new PocketBase(URL).collection('membros').authWithPassword(`${casa.id}_dina`, '369152'));
 });
 
 // O nome muda; o identificador não. É isso que faz o histórico continuar a

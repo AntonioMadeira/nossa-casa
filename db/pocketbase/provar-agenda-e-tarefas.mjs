@@ -40,12 +40,12 @@ const s = (p) => ({ password: p, passwordConfirm: p });
 
 const rita  = await mk('rita',  'admin',   { email: 'rita@x.pt',  ...s('palavra-longa-1'), verified: true });
 const tomas = await mk('tomas', 'adulto',  { email: 'tomas@x.pt', ...s('palavra-longa-2'), verified: true });
-const leo   = await mk('leo',   'crianca', { ...s('1357'), verified: true });
-const mia   = await mk('mia',   'crianca', { ...s('2468'), verified: true });
+const leo   = await mk('leo',   'crianca', { ...s('135790'), verified: true });
+const mia   = await mk('mia',   'crianca', { ...s('246813'), verified: true });
 
 const cRita  = await como('rita@x.pt',  'palavra-longa-1');
 const cTomas = await como('tomas@x.pt', 'palavra-longa-2');
-const cLeo   = await como(leo.login, '1357');
+const cLeo   = await como(leo.login, '135790');
 
 // ═════════════════════════════════════════════════════════════════════════════
 // 1. A AGENDA, e os três níveis
@@ -213,14 +213,14 @@ await prova('⚠ e um ADULTO marca a tarefa de uma criança', async () => {
 });
 
 await prova('⚠ a Mia não marca a tarefa do Léo', async () => {
-  const cMia = await como(mia.login, '2468');
+  const cMia = await como(mia.login, '246813');
   await recusado(() => cMia.collection('tarefas_feitas').create({
     casa: casa.id, tarefa: tarefa.id, data: '2026-09-22', marcada_por: mia.id }));
 });
 
 await prova('⚠ nem marca a do Léo assinando com o nome dele', () =>
   recusado(async () => {
-    const cMia = await como(mia.login, '2468');
+    const cMia = await como(mia.login, '246813');
     return cMia.collection('tarefas_feitas').create({
       casa: casa.id, tarefa: tarefa.id, data: '2026-09-23', marcada_por: leo.id });
   }));
@@ -260,7 +260,7 @@ await prova('⚠ mas não desfaz a que um adulto JÁ confirmou', async () => {
 });
 
 await prova('⚠ e a Mia não apaga a marcação do Léo, mesmo por confirmar', async () => {
-  const cMia = await como(mia.login, '2468');
+  const cMia = await como(mia.login, '246813');
   const doLeo = (await admin.collection('tarefas_feitas').getFullList())
     .find(x => x.tarefa === tarefa.id && x.data.slice(0, 10) === '2026-09-21');
   if (doLeo.confirmada_em) throw new Error('esta devia estar por confirmar');

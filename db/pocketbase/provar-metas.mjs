@@ -39,7 +39,7 @@ const s = (p) => ({ password: p, passwordConfirm: p });
 const rita  = await mk('Rita',  'admin',   { email: 'rita@x.pt',   ...s('palavra-longa-1') });
 const tomas = await mk('Tomas', 'admin',   { email: 'tomas@x.pt',  ...s('palavra-longa-2') });
 const dina  = await mk('Dina',  'adulto',  { email: 'dina@x.pt',   ...s('palavra-longa-3') });
-const leo   = await mk('Leo',   'crianca', { ...s('1357') });
+const leo   = await mk('Leo',   'crianca', { ...s('135790') });
 
 await auth.entrarAdulto('rita@x.pt', 'palavra-longa-1');
 const daRita = sync.sessao();
@@ -183,7 +183,7 @@ await prova('⚠ e uma CRIANÇA não vê meta nenhuma', async () => {
   // Metas são orçamento da casa, e o modo criança não mostra orçamento — está
   // no CLAUDE.md como coisa a confirmar. Aqui o dado nem CHEGA ao dispositivo
   // (INVARIANTE #3), que é a única forma que vale.
-  const doLeo = await telemovel(leo.login, '1357');
+  const doLeo = await telemovel(leo.login, '135790');
   igual((await doLeo.collection('metas').getFullList()).length, 0);
   igual((await doLeo.collection('meta_movimentos').getFullList()).length, 0);
 });

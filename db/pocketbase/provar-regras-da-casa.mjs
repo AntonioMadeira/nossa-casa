@@ -34,7 +34,7 @@ const s = (p) => ({ password: p, passwordConfirm: p });
 
 const rita  = await mk('Rita',  'admin',   { email: 'rita@x.pt',  ...s('palavra-longa-1') });
 const tomas = await mk('Tomas', 'adulto',  { email: 'tomas@x.pt', ...s('palavra-longa-2') });
-const leo   = await mk('Leo',   'crianca', { ...s('1357') });
+const leo   = await mk('Leo',   'crianca', { ...s('135790') });
 
 await auth.entrarAdulto('rita@x.pt', 'palavra-longa-1');
 const daRita = sync.sessao();
@@ -159,7 +159,7 @@ await prova('⚠ o Tomás, que é adulto e não administra, NÃO muda as regras'
   recusado(() => doTomas.collection('casas').update(casa.id, { valor_ponto: 5 })));
 
 await prova('⚠ nem uma criança', async () => {
-  const doLeo = await telemovel(leo.login, '1357');
+  const doLeo = await telemovel(leo.login, '135790');
   await recusado(() => doLeo.collection('casas').update(casa.id, { valor_ponto: 5 }));
 });
 
@@ -194,7 +194,7 @@ await prova('⚠ pela COLEÇÃO é recusado — e era assim que a app o tentava'
   // não saber. A app fazia `editarMembro(id, { password })` e apanhava a recusa
   // num `.catch(() => {})`: falhava em silêncio.
   let mensagem = null;
-  try { await sync.editarMembro(leo.id, { password: '2470', passwordConfirm: '2470' }); }
+  try { await sync.editarMembro(leo.id, { password: '247015', passwordConfirm: '247015' }); }
   catch (e) { mensagem = e.message; }
   if (!mensagem) throw new Error('PASSOU — a coleção devia exigir oldPassword');
 });
@@ -203,23 +203,23 @@ await prova('⚠ mas pela ROTA passa, e a criança entra no telemóvel dela', as
   // O resumo local (`resumoPin`) serve a entrada sem servidor, e é isso e nada
   // mais. O PIN a sério é a palavra-passe no PocketBase, com bcrypt feito pelo
   // servidor.
-  await sync.definirPin(leo.id, '2470');
-  const dele = await telemovel(leo.login, '2470');
+  await sync.definirPin(leo.id, '247015');
+  const dele = await telemovel(leo.login, '247015');
   igual(dele.authStore.record.nome, 'Leo');
 });
 
 await prova('e o PIN antigo deixa de servir', () =>
-  recusado(() => telemovel(leo.login, '1357')));
+  recusado(() => telemovel(leo.login, '135790')));
 
 await prova('⚠ a rota verifica a qualidade do PIN outra vez, no SERVIDOR', async () => {
   // O cliente já a verifica, e isso é para a pessoa saber porquê enquanto
   // escreve. Isto é outra coisa: um cliente pode ser trocado, e a regra que
   // protege a casa não pode viver só nele.
-  for (const mau of ['1111', '1234', '4321', '12', 'abcd']) {
+  for (const mau of ['111111', '123456', '987654', '12', 'abcd']) {
     await recusado(() => sync.definirPin(leo.id, mau));
   }
   // E o PIN bom continua a servir — nenhuma das recusas o estragou.
-  const dele = await telemovel(leo.login, '2470');
+  const dele = await telemovel(leo.login, '247015');
   igual(dele.authStore.record.nome, 'Leo');
 });
 
@@ -227,7 +227,7 @@ await prova('⚠ e a rota NÃO toca num adulto', async () => {
   // Um adulto tem palavra-passe, não PIN, e muda-a ele. Deixar esta rota tocar
   // num adulto era dar a quem administra a chave da conta do companheiro —
   // incluindo a ficha de saúde dele, que é só dele (INVARIANTE #3).
-  await recusado(() => sync.definirPin(tomas.id, '2470'));
+  await recusado(() => sync.definirPin(tomas.id, '247015'));
   const dele = await telemovel('tomas@x.pt', 'palavra-longa-2');
   igual(dele.authStore.record.nome, 'Tomas');
 });
@@ -236,10 +236,10 @@ await prova('⚠ nem numa criança de OUTRA casa', async () => {
   const outra = await admin.collection('casas').create({ nome: PREFIXO + 'Outra', valor_ponto: 0.1 });
   const doutra = await admin.collection('membros').create({
     nome: 'Ines', login: `${outra.id}_Ines`, casa: outra.id, papel: 'crianca',
-    verified: true, password: '9753', passwordConfirm: '9753' });
-  await recusado(() => sync.definirPin(doutra.id, '2470'));
+    verified: true, password: '975318', passwordConfirm: '975318' });
+  await recusado(() => sync.definirPin(doutra.id, '247015'));
   // O PIN dela continua o que era.
-  const dela = await telemovel(doutra.login, '9753');
+  const dela = await telemovel(doutra.login, '975318');
   igual(dela.authStore.record.nome, 'Ines');
 });
 
@@ -248,7 +248,7 @@ await prova('⚠ e quem não administra não define PIN nenhum', async () => {
   const r = await fetch(`${URL.replace(/\/+$/, '')}/api/casa/pin`, {
     method: 'POST',
     headers: { Authorization: doTomas.authStore.token, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ membro: leo.id, pin: '8642' }),
+    body: JSON.stringify({ membro: leo.id, pin: '864213' }),
   });
   igual(r.ok, false, 'estado ' + r.status);
 });
@@ -266,7 +266,7 @@ await prova('⚠ `pin_definido` fica a verdadeiro quando o PIN entra — pelo ho
   // mostra como «Ainda sem PIN — pedir a um adulto».
   const semPin = await admin.collection('membros').create({
     nome: 'Duda', login: `${casa.id}_Duda`, casa: casa.id, papel: 'crianca',
-    verified: true, password: '8642', passwordConfirm: '8642' });
+    verified: true, password: '864213', passwordConfirm: '864213' });
   // ⚠ Criada COM palavra-passe (a coleção exige uma), portanto tem PIN — e o
   // hook diz-o. O «sem PIN» a sério só existe em linhas anteriores ao campo.
   igual(semPin.pin_definido, true);
@@ -283,35 +283,35 @@ const rotaPropria = (token, atual, novo) => fetch(`${URL.replace(/\/+$/, '')}/ap
 });
 
 await prova('⚠ a criança muda o SEU PIN sabendo o atual — e entra com o novo', async () => {
-  const dele = await telemovel(leo.login, '2470');
-  const r = await rotaPropria(dele.authStore.token, '2470', '3861');
+  const dele = await telemovel(leo.login, '247015');
+  const r = await rotaPropria(dele.authStore.token, '247015', '386142');
   igual(r.ok, true, 'estado ' + r.status);
   const d = await r.json();
   igual(d.login, leo.login);
-  igual((await telemovel(leo.login, '3861')).authStore.record.nome, 'Leo');
+  igual((await telemovel(leo.login, '386142')).authStore.record.nome, 'Leo');
 });
 
 await prova('e o PIN antigo deixa de servir, como quando é o adulto a mudá-lo', () =>
-  recusado(() => telemovel(leo.login, '2470')));
+  recusado(() => telemovel(leo.login, '247015')));
 
 await prova('⚠ sem o PIN atual certo, nada muda', async () => {
-  const dele = await telemovel(leo.login, '3861');
-  const r = await rotaPropria(dele.authStore.token, '0000', '5927');
+  const dele = await telemovel(leo.login, '386142');
+  const r = await rotaPropria(dele.authStore.token, '000000', '592714');
   igual(r.ok, false, 'estado ' + r.status);
-  igual((await telemovel(leo.login, '3861')).authStore.record.nome, 'Leo');
+  igual((await telemovel(leo.login, '386142')).authStore.record.nome, 'Leo');
 });
 
 await prova('⚠ e a qualidade confere-se outra vez no servidor', async () => {
-  const dele = await telemovel(leo.login, '3861');
-  for (const mau of ['1111', '1234', '4321', '12', 'abcd', '3861']) {
-    const r = await rotaPropria(dele.authStore.token, '3861', mau);
+  const dele = await telemovel(leo.login, '386142');
+  for (const mau of ['111111', '123456', '987654', '12', 'abcd', '386142']) {
+    const r = await rotaPropria(dele.authStore.token, '386142', mau);
     igual(r.ok, false, `«${mau}» passou`);
   }
-  igual((await telemovel(leo.login, '3861')).authStore.record.nome, 'Leo');
+  igual((await telemovel(leo.login, '386142')).authStore.record.nome, 'Leo');
 });
 
 await prova('⚠ um adulto não usa a rota da criança', async () => {
-  const r = await rotaPropria(doTomas.authStore.token, 'palavra-longa-2', '5927');
+  const r = await rotaPropria(doTomas.authStore.token, 'palavra-longa-2', '592714');
   igual(r.ok, false, 'estado ' + r.status);
   igual((await telemovel('tomas@x.pt', 'palavra-longa-2')).authStore.record.nome, 'Tomas');
 });
@@ -319,22 +319,22 @@ await prova('⚠ um adulto não usa a rota da criança', async () => {
 await prova('⚠ e a criança continua sem poder mudar o PIN de OUTRA criança', async () => {
   // A `updateRule` de `membros` é de quem administra; a rota só toca no
   // próprio. Abrir o update ao próprio para a palavra-passe abria-lhe o papel.
-  const dele = await telemovel(leo.login, '3861');
+  const dele = await telemovel(leo.login, '386142');
   await recusado(() => dele.collection('membros').update(leo.id, { papel: 'admin' }));
-  await recusado(() => dele.collection('membros').update(leo.id, { password: '5927', passwordConfirm: '5927', oldPassword: '3861' }));
+  await recusado(() => dele.collection('membros').update(leo.id, { password: '592714', passwordConfirm: '592714', oldPassword: '386142' }));
 });
 
 // A app entra pelo mesmo caminho.
 await prova('a app entra a criança pelo servidor (`sync.entrarCrianca`)', async () => {
-  const r = await sync.entrarCrianca(leo.login, '3861');
+  const r = await sync.entrarCrianca(leo.login, '386142');
   igual(r.record.nome, 'Leo');
-  await recusado(() => sync.entrarCrianca(leo.login, '2470'));
+  await recusado(() => sync.entrarCrianca(leo.login, '247015'));
 });
 
 await prova('e `sync.mudarMeuPin` muda e volta a entrar com o novo', async () => {
-  await sync.mudarMeuPin('3861', '2470');
+  await sync.mudarMeuPin('386142', '247015');
   igual(sync.sessao().nome, 'Leo');
-  igual((await telemovel(leo.login, '2470')).authStore.record.nome, 'Leo');
+  igual((await telemovel(leo.login, '247015')).authStore.record.nome, 'Leo');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════

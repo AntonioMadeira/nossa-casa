@@ -21,7 +21,7 @@ const s = (p) => ({ password: p, passwordConfirm: p });
 
 await mk('Rita', 'admin', { email: 'rita-cf@x.pt', ...s('palavra-longa-1') });
 const tomas = await mk('Tomás', 'adulto', { email: 'tomas-cf@x.pt', ...s('palavra-longa-2') });
-await mk('Leo', 'crianca', { ...s('1357') });
+await mk('Leo', 'crianca', { ...s('135790') });
 const envelope = await admin.collection('envelopes').create({ casa: casa.id, nome: 'Casa & contas', limite_base: 900 });
 
 const telemovel = async (id, senha) => {
@@ -30,7 +30,7 @@ const telemovel = async (id, senha) => {
   await c.collection('membros').authWithPassword(id, senha);
   return c;
 };
-const doLeo = await telemovel(`${casa.id}_Leo`, '1357');
+const doLeo = await telemovel(`${casa.id}_Leo`, '135790');
 
 await auth.entrarAdulto('rita-cf@x.pt', 'palavra-longa-1');
 const daRita = sync.sessao();

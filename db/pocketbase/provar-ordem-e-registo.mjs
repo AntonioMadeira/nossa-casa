@@ -39,7 +39,7 @@ const s = (p) => ({ password: p, passwordConfirm: p });
 
 const rita  = await mk('Rita',  'admin',   { email: 'rita-ord@x.pt',  ...s('palavra-longa-1') });
 const tomas = await mk('Tomas', 'adulto',  { email: 'tomas-ord@x.pt', ...s('palavra-longa-2') });
-const leo   = await mk('Leo',   'crianca', { ...s('1357') });
+const leo   = await mk('Leo',   'crianca', { ...s('135790') });
 
 await auth.entrarAdulto('rita-ord@x.pt', 'palavra-longa-1');
 const daRita = sync.sessao();
@@ -102,7 +102,7 @@ await prova('e desarrumar uma tarefa tira-lhe o posto', async () => {
 await prova('⚠ uma criança não muda a ordem das tarefas', async () => {
   const doLeo = new PocketBase(URL);
   doLeo.autoCancellation(false);   // uma escrita não se perde por chegar outra atrás
-  await doLeo.collection('membros').authWithPassword(leo.login, '1357');
+  await doLeo.collection('membros').authWithPassword(leo.login, '135790');
   await recusado(() => doLeo.collection('tarefas').update(cama, { posto: 9 }));
 });
 
@@ -161,7 +161,7 @@ await prova('⚠ uma criança não lê o registo da casa', async () => {
   // casa, como o orçamento.
   const doLeo = new PocketBase(URL);
   doLeo.autoCancellation(false);   // uma escrita não se perde por chegar outra atrás
-  await doLeo.collection('membros').authWithPassword(leo.login, '1357');
+  await doLeo.collection('membros').authWithPassword(leo.login, '135790');
   igual((await doLeo.collection('registo').getFullList()).length, 0);
 });
 

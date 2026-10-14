@@ -402,7 +402,7 @@ export const MIGRATIONS = {
   4: (o) => ({
     ...o,
     pins: Object.fromEntries(Object.entries(o.pins || {})
-      .map(([n, p]) => [n, /^[0-9]{4}$/.test(String(p)) ? resumoPin(n, p) : p])),
+      .map(([n, p]) => [n, /^[0-9]{4,6}$/.test(String(p)) ? resumoPin(n, p) : p])),
   }),
 
   // v4 → v5: o acerto entre adultos era um booleano `settled` mais o montante
@@ -4730,8 +4730,8 @@ function build(s, set, mapaServidor = { current: { casa: null, membros: {}, enve
 
   // PIN: recusa dígitos iguais, sequências, e reutilização
   const pinError = (name, pin) => {
-    if (!/^\d{4}$/.test(pin)) return 'O PIN tem de ter 4 dígitos.';
-    if (/^(\d)\1{3}$/.test(pin)) return 'Não pode ter os quatro dígitos iguais.';
+    if (!/^\d{6}$/.test(pin)) return 'O PIN tem de ter 6 dígitos.';
+    if (/^(\d)\1{5}$/.test(pin)) return 'Não pode ter os seis dígitos iguais.';
     const seq = '0123456789';
     if (seq.includes(pin) || seq.split('').reverse().join('').includes(pin)) return 'Não pode ser uma sequência.';
     // Os PIN gravados são resumos, portanto compara-se resumo com resumo —

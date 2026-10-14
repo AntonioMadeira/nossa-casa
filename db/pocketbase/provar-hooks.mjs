@@ -14,16 +14,16 @@ const mk = (nome, papel, extra) => pb.collection('membros').create({
 const senha = (p) => ({ password: p, passwordConfirm: p });
 
 console.log('\n── qualidade do PIN ──');
-await prova('quatro dígitos iguais recusados', () => recusado(() => mk('a', 'crianca', senha('1111'))));
-await prova('sequência recusada',              () => recusado(() => mk('b', 'crianca', senha('1234'))));
-await prova('sequência invertida recusada',    () => recusado(() => mk('b2', 'crianca', senha('4321'))));
+await prova('quatro dígitos iguais recusados', () => recusado(() => mk('a', 'crianca', senha('111111'))));
+await prova('sequência recusada',              () => recusado(() => mk('b', 'crianca', senha('123456'))));
+await prova('sequência invertida recusada',    () => recusado(() => mk('b2', 'crianca', senha('987654'))));
 await prova('letras recusadas',                () => recusado(() => mk('c', 'crianca', senha('12ab'))));
 let leo;
-await prova('PIN válido aceite', async () => { leo = await mk('leo', 'crianca', senha('1357')); });
+await prova('PIN válido aceite', async () => { leo = await mk('leo', 'crianca', senha('135790')); });
 
 console.log('\n── palavra-passe de adulto ──');
 await prova('adulto com 4 caracteres recusado',
-  () => recusado(() => mk('d', 'adulto', { email: 'd@x.pt', ...senha('1357') })));
+  () => recusado(() => mk('d', 'adulto', { email: 'd@x.pt', ...senha('135790') })));
 let rita;
 await prova('adulto com palavra longa aceite', async () => {
   rita = await mk('rita', 'admin', { email: 'r@x.pt', ...senha('palavra-longa-1') });
@@ -31,7 +31,7 @@ await prova('adulto com palavra longa aceite', async () => {
 
 console.log('\n── §8: minimização ──');
 await prova('criança com e-mail recusada',
-  () => recusado(() => mk('e', 'crianca', { email: 'e@x.pt', ...senha('1357') })));
+  () => recusado(() => mk('e', 'crianca', { email: 'e@x.pt', ...senha('135790') })));
 await prova('criança sem e-mail: é assim que fica', () => {
   if (leo.email) throw new Error('a criança ficou com e-mail');
 });

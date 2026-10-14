@@ -32,7 +32,7 @@ const s = (p) => ({ password: p, passwordConfirm: p });
 
 const rita = await mk('Rita', 'admin', { email: 'rita-ex@x.pt', ...s('palavra-longa-1') });
 const tomas = await mk('Tomás', 'adulto', { email: 'tomas-ex@x.pt', ...s('palavra-longa-2') });
-const leo = await mk('Leo', 'crianca', { ...s('1357') });
+const leo = await mk('Leo', 'crianca', { ...s('135790') });
 
 const mercearia = await admin.collection('envelopes').create({ casa: casa.id, nome: 'Mercearia', limite_base: 450 });
 const lazer = await admin.collection('envelopes').create({ casa: casa.id, nome: 'Lazer', limite_base: 120 });
@@ -161,7 +161,7 @@ await prova('⚠ o extracto de Agosto não muda quando Setembro cresce nem quand
 console.log('\n── só adultos ──');
 
 await prova('⚠ a criança não recebe extracto nenhum — é o dinheiro da casa', async () => {
-  await auth.entrarCrianca(`${casa.id}_Leo`, '1357');
+  await auth.entrarCrianca(`${casa.id}_Leo`, '135790');
   igual((await sync.puxarCasa()).extractos.length, 0);
 });
 

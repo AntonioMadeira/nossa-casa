@@ -628,7 +628,7 @@ export default function Gestao({ t, user, onClose }) {
               </View>
               <Text style={{ fontFamily: FONT.ui, fontSize: 11.5, lineHeight: 18, color: t.text3 }}>
                 {form.papel === 'crianca'
-                  ? 'Uma criança entra com um PIN de 4 dígitos e não vê o orçamento da casa.'
+                  ? 'Uma criança entra com um PIN de 6 dígitos e não vê o orçamento da casa.'
                   : 'Um adulto entra com a conta Google e vê o dinheiro da casa.'}
               </Text>
             </View>
@@ -656,8 +656,8 @@ export default function Gestao({ t, user, onClose }) {
 
             {form.papel === 'crianca' ? (
               <View>
-                <Label t={t}>PIN de 4 dígitos</Label>
-                <TextInput accessibilityLabel="PIN de 4 dígitos" placeholder="0000" keyboardType="numeric" maxLength={4} secureTextEntry
+                <Label t={t}>PIN de 6 dígitos</Label>
+                <TextInput accessibilityLabel="PIN de 6 dígitos" placeholder="000000" keyboardType="numeric" maxLength={6} secureTextEntry
                   value={form.segredo} onChangeText={(v) => setForm(f => ({ ...f, segredo: v }))}
                   style={campo(t)} />
               </View>
@@ -675,8 +675,9 @@ export default function Gestao({ t, user, onClose }) {
                     value={form.segredo} onChangeText={(v) => setForm(f => ({ ...f, segredo: v }))}
                     style={campo(t)} />
                   <Text style={{ fontFamily: FONT.ui, fontSize: 11.5, lineHeight: 18, color: t.text3, marginTop: S.sm }}>
-                    É a palavra-passe da conta na casa, não a da Google. Combine-a
-                    com a pessoa; ela pode mudá-la depois no Perfil.
+                    É a palavra-passe da conta na casa, não a da Google. Seguirá
+                    por e-mail para a pessoa, em seu nome, com o endereço da app;
+                    ela pode mudá-la depois no Perfil.
                   </Text>
                 </View>
               </>
@@ -765,7 +766,7 @@ export default function Gestao({ t, user, onClose }) {
             {(s.roles[selectedMember] || 'crianca') === 'crianca' ? (
               <View>
                 <Label t={t}>{temPin(selectedMember) ? 'Alterar o PIN' : 'Definir o PIN'}</Label>
-                <TextInput accessibilityLabel="PIN de 4 dígitos" placeholder="0000" keyboardType="numeric" maxLength={4} secureTextEntry
+                <TextInput accessibilityLabel="PIN de 6 dígitos" placeholder="000000" keyboardType="numeric" maxLength={6} secureTextEntry
                   value={input} onChangeText={setInput} style={campo(t)} />
                 {pinMsg ? <View style={{ marginTop: S.md }}><Tile t={t} kind="warn">{pinMsg}</Tile></View> : null}
               </View>

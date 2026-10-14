@@ -47,7 +47,7 @@ const mk = (nome, papel, extra) => admin.collection('membros').create({
   nome, login: `${casa.id}_${nome}`, casa: casa.id, papel, verified: true, ...extra });
 const rita = await mk('rita', 'admin', { email: 'rita@x.pt', password: 'palavra-longa-1', passwordConfirm: 'palavra-longa-1' });
 const tomas = await mk('tomas', 'adulto', { email: 'tomas@x.pt', password: 'palavra-longa-2', passwordConfirm: 'palavra-longa-2' });
-const leo = await mk('leo', 'crianca', { password: '1357', passwordConfirm: '1357' });
+const leo = await mk('leo', 'crianca', { password: '135790', passwordConfirm: '135790' });
 
 await auth.entrarAdulto('rita@x.pt', 'palavra-longa-1');
 
@@ -129,7 +129,7 @@ await prova('o outro adulto também', async () => {
 });
 
 await prova('⚠ e o telemóvel do LÉO não recebe nenhum', async () => {
-  const c = await como(`${casa.id}_leo`, '1357');
+  const c = await como(`${casa.id}_leo`, '135790');
   igual((await c.collection('anexos').getFullList()).length, 0);
 });
 

@@ -18,7 +18,7 @@ const mk = (nome, papel, extra) => admin.collection('membros').create({
   nome, login: `${casa.id}_${nome}`, casa: casa.id, papel, verified: true, ...extra });
 const s = (p) => ({ password: p, passwordConfirm: p });
 const rita = await mk('Rita', 'admin', { email: 'rita-pl@x.pt', ...s('palavra-longa-1') });
-const leo = await mk('Leo', 'crianca', { ...s('1357') });
+const leo = await mk('Leo', 'crianca', { ...s('135790') });
 
 const loja = await admin.collection('lojas').create({ casa: casa.id, nome: 'Continente' });
 const mercearia = await admin.collection('seccoes').create({ casa: casa.id, nome: 'Mercearia', posto: 1 });
@@ -36,7 +36,7 @@ const telemovel = async (id, senha) => {
   await c.collection('membros').authWithPassword(id, senha);
   return c;
 };
-const doLeo = await telemovel(`${casa.id}_Leo`, '1357');
+const doLeo = await telemovel(`${casa.id}_Leo`, '135790');
 await auth.entrarAdulto('rita-pl@x.pt', 'palavra-longa-1');
 const daRita = sync.sessao();
 

@@ -176,8 +176,8 @@ describe('A Gestão põe as quatro operações no ecrã', () => {
     // define-se um PIN ao Léo pela própria loja, como um adulto faria
     const loja = r.root.findAll(n => n.props && n.props.accessibilityLabel === 'Léo')[0];
     TestRenderer.act(() => { loja.props.onPress(); });
-    const campoPin = r.root.findAll(n => n.props && n.props.maxLength === 4)[0];
-    TestRenderer.act(() => { campoPin.props.onChangeText('2470'); });
+    const campoPin = r.root.findAll(n => n.props && n.props.maxLength === 6)[0];
+    TestRenderer.act(() => { campoPin.props.onChangeText('482016'); });
     const guardar = r.root.findAll(n => n.props
       && n.props.accessibilityLabel === 'Guardar PIN')[0];
     TestRenderer.act(() => { guardar.props.onPress(); });

@@ -27,7 +27,7 @@ const s = (p) => ({ password: p, passwordConfirm: p });
 
 const rita  = await mk('rita',  'admin',   { email: 'rita@x.pt',  ...s('palavra-longa-1'), verified: true });
 const tomas = await mk('tomas', 'adulto',  { email: 'tomas@x.pt', ...s('palavra-longa-2'), verified: true });
-const leo   = await mk('leo',   'crianca', { ...s('1357'), verified: true });
+const leo   = await mk('leo',   'crianca', { ...s('135790'), verified: true });
 
 const ep = (membro, especialidade) => admin.collection('episodios_saude').create({
   casa: casa.id, membro, especialidade, dia: '2026-08-28', medico: 'Dr. Cardoso',
@@ -40,7 +40,7 @@ await admin.collection('anexos').create({ casa: casa.id, episodio: epLeo.id, tit
 
 const cRita  = await como('rita@x.pt',  'palavra-longa-1');
 const cTomas = await como('tomas@x.pt', 'palavra-longa-2');
-const cLeo   = await como(leo.login, '1357');
+const cLeo   = await como(leo.login, '135790');
 
 console.log('\n── a ficha de um adulto é só dele ──');
 await prova('a Rita (administradora) NÃO vê a ficha do Tomás', async () => {
@@ -156,7 +156,7 @@ await prova('o Léo a passar a adulto tira a ficha da vista dos pais', async () 
   igual(a.filter(x => x.episodio === epLeo.id).length, 0, 'o anexo ainda é visível');
 });
 await prova('e ele continua a ver a sua', async () => {
-  const c = await como('leo@x.pt', '1357');
+  const c = await como('leo@x.pt', '135790');
   igual((await c.collection('episodios_saude').getFullList()).length, 1);
 });
 

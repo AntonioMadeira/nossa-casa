@@ -49,7 +49,7 @@ const mk = (nome, papel, extra) => admin.collection('membros').create({
   nome, login: `${casa.id}_${nome}`, casa: casa.id, papel, verified: true, ...extra });
 const rita = await mk('rita', 'admin', { email: 'rita@x.pt', password: 'palavra-longa-1', passwordConfirm: 'palavra-longa-1' });
 const tomas = await mk('tomas', 'adulto', { email: 'tomas@x.pt', password: 'palavra-longa-2', passwordConfirm: 'palavra-longa-2' });
-const leo = await mk('leo', 'crianca', { password: '1357', passwordConfirm: '1357' });
+const leo = await mk('leo', 'crianca', { password: '135790', passwordConfirm: '135790' });
 
 // ── 1. O travão, antes de qualquer coisa ─────────────────────────────────────
 //
@@ -133,7 +133,7 @@ await prova('o outro adulto também a vê — é a ficha de uma criança', async
 await prova('⚠ e o telemóvel do LÉO não a recebe', async () => {
   // O ponto todo do INVARIANTE #3: não é a interface a esconder — a consulta
   // não vem na resposta.
-  const cLeo = await como(`${casa.id}_leo`, '1357');
+  const cLeo = await como(`${casa.id}_leo`, '135790');
   const v = await cLeo.collection('episodios_saude').getFullList();
   igual(v.length, 0, v.map(x => x.especialidade).join('/'));
 });

@@ -210,8 +210,9 @@ export default function Login({ t, onEnter, erroInicial = null }) {
 
   const press = (k) => {
     if (k === '←') return setPin(p => p.slice(0, -1));
-    if (k === 'OK') return pin.length === 4 && submitPin(pin);
-    if (pin.length >= 4) return;
+    // 6 dígitos nos PIN novos; 4 continua a entrar para quem já tinha um antigo.
+    if (k === 'OK') return pin.length >= 4 && submitPin(pin);
+    if (pin.length >= 6) return;
     setPin(pin + k);
   };
 
@@ -457,7 +458,7 @@ export default function Login({ t, onEnter, erroInicial = null }) {
               </View>
             </View>
             <View style={{ flexDirection: 'row', gap: 14, justifyContent: 'center' }}>
-              {[0, 1, 2, 3].map(i => (
+              {[0, 1, 2, 3, 4, 5].map(i => (
                 <View key={i} style={{ width: 16, height: 16, borderRadius: R.pill, borderWidth: 2,
                   borderColor: 'rgba(255,255,255,0.6)', backgroundColor: pin.length > i ? '#FFFFFF' : 'transparent' }} />
               ))}

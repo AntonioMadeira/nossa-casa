@@ -19,7 +19,7 @@ const mk = (nome, papel, extra) => admin.collection('membros').create({
 const s = (p) => ({ password: p, passwordConfirm: p });
 
 await mk('Rita', 'admin',   { email: 'rita-ementa@x.pt', ...s('palavra-longa-1') });
-await mk('Leo',  'crianca', { ...s('1357') });
+await mk('Leo',  'crianca', { ...s('135790') });
 
 const telemovel = async (id, senha) => {
   const c = new PocketBase(URL);
@@ -27,7 +27,7 @@ const telemovel = async (id, senha) => {
   await c.collection('membros').authWithPassword(id, senha);
   return c;
 };
-const doLeo = await telemovel(`${casa.id}_Leo`, '1357');
+const doLeo = await telemovel(`${casa.id}_Leo`, '135790');
 
 await auth.entrarAdulto('rita-ementa@x.pt', 'palavra-longa-1');
 const daRita = sync.sessao();
