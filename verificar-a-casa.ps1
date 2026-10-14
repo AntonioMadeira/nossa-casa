@@ -89,11 +89,20 @@ foreach ($c in "episodios_saude", "notas_saude", "receitas_saude", "anexos", "al
 
 }   # fim do bloco que so corre quando NAO ha filtro de rede pelo meio
 
-"`n=== a VPS nao tem portas abertas alem do SSH ==="
-# So o 22 pode estar na firewall; o 80 e o 443 foram fechados a 14/10/2026.
+"`n=== portas da VPS: SSH, e o nginx do site estatico ==="
+# O 80 e o 443 estao abertos DE PROPOSITO desde 14/10/2026: o nginx serve o build
+# web da app em anossacasa.app (ficheiros estaticos, sem proxy). A casa continua
+# so pelo tunel. O que se confere e que nada mais esta aberto, e que o nginx
+# NAO chega ao PocketBase.
 $ufw = NaVps "ufw status"
-Ver "a firewall permite o 80" $($ufw -match '(?m)^80/tcp\s+ALLOW') "False"
-Ver "a firewall permite o 443" $($ufw -match '(?m)^443/tcp\s+ALLOW') "False"
+$abertas = @([regex]::Matches($ufw, '(?m)^(\d+)/tcp\s+ALLOW') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique) -join ","
+Ver "portas permitidas na firewall" $abertas "22,443,80"
+$pb = NaVps "ss -tln | grep -E ':8095\b'"
+Ver "PocketBase so em 127.0.0.1:8095" $(if ($pb -match '127\.0\.0\.1:8095' -and $pb -notmatch '(0\.0\.0\.0|\*|\[::\]):8095') { "sim" } else { "nao" }) "sim"
+# O site estatico devolve a pagina para qualquer caminho, por isso o codigo nao
+# serve: o que se procura e o JSON de saude do PocketBase no corpo.
+$viaNginx = NaVps "curl -sk https://127.0.0.1/api/health; curl -s http://127.0.0.1/api/health"
+Ver "o nginx NAO serve o PocketBase (/api/health)" $(if ($viaNginx -match '"code":200') { "serve" } else { "nao serve" }) "nao serve"
 
 "`n" + $(if ($falhas) { "FALHAS: $falhas" } else { "TUDO BEM - a casa esta na VPS e esta como se esperava" })
 exit $(if ($falhas) { 1 } else { 0 })
