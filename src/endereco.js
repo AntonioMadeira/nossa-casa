@@ -88,6 +88,9 @@ export const eEnderecoDeCasa = (url) => {
   if (host === 'localhost' || host.endsWith('.localhost')) return true;
   if (host === '::1') return true;
   if (host.endsWith('.local')) return true;                 // mDNS da rede de casa
+  // A VPS privada da casa (decisão do dono, 14/10/2026): sem contrato de
+  // subcontratação e sem mais ninguém com acesso, é «de casa» por decisão sua.
+  if (host === 'casa.anossacasa.app') return true;
 
   // ⚠ Por partes, e não por prefixo de texto: `192.168.1.5.exemplo.com` começa
   // por «192.168.» e é um nome na internet.

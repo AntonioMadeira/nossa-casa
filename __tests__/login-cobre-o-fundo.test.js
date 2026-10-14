@@ -31,7 +31,7 @@ describe('a entrada cobre a janela', () => {
     const bloco = fonte.slice(fonte.indexOf('<Image source='));
     const estilo = bloco.slice(0, bloco.indexOf('/>'));
 
-    expect(estilo).toContain('login-bg.png');
+    expect(estilo).toContain('login-bg.jpg');
     expect(estilo).toContain("position: 'absolute'");
     expect(estilo).toMatch(/top: 0/);
     expect(estilo).toMatch(/bottom: 0/);

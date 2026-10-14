@@ -250,7 +250,7 @@ export default function Login({ t, onEnter, erroInicial = null }) {
           `opacity: 0`. O que se vê é um `div` irmão com `background-image` e
           `background-size`. O `object-fit` do `<img>` não quer dizer nada —
           diz `fill` mesmo quando está tudo bem, e enganou-me. */}
-      <Image source={require('../../assets/login-bg.png')} resizeMode="cover"
+      <Image source={require('../../assets/login-bg.jpg')} resizeMode="cover"
         accessibilityIgnoresInvertColors
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
           width: '100%', height: '100%' }} />

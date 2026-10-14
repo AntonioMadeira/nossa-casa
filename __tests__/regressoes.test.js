@@ -1513,7 +1513,7 @@ describe('O fundo à volta da coluna, no monitor', () => {
   test('é a imagem do ecrã de entrada, e não uma cor lisa', () => {
     // Uma cor lisa ao lado da coluna é uma moldura que ninguém escolheu. A app
     // assenta na mesma imagem onde se entra nela.
-    expect(app).toMatch(/login-bg\.png/);
+    expect(app).toMatch(/login-bg.jpg/);
     expect(app).toMatch(/document\.body\.style\.backgroundImage/);
   });
 

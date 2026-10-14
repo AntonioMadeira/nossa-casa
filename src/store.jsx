@@ -1336,7 +1336,16 @@ export function StoreProvider({ children }) {
       // desenhar já com o que tem em disco, e a rede é um extra que chega
       // quando chegar. Sem ligação, isto não faz nada e a app corre como
       // sempre correu.
-      await lerDoServidor();
+      //
+      // ⚠ Só com sessão. Sem ela isto disparava as ~55 leituras de coleções
+      // (`perPage=500`) no ecrã de entrada, todas recusadas ou vazias, e
+      // atrasava o arranque a ~20 s. Quem tem sessão gravada é lido pelo
+      // `App.jsx` logo que ela é retomada (`sessaoPronta` + `lerDoServidor`),
+      // e quem entra é lido pelo próprio ecrã de entrada.
+      try {
+        const s = await carregarSync();
+        if (s && s.sessao && s.sessao()) await lerDoServidor();
+      } catch (e) { /* sem sessão: nada a ler */ }
     })();
   }, []);
 

@@ -38,7 +38,7 @@ import { podeVerEvento } from './src/store';
 // A imagem do ecrã de entrada, reaproveitada como fundo à volta da coluna no
 // monitor. É a mesma que o `Login.jsx` usa — uma só imagem, um só sítio de onde
 // vem, e a app fica assente no mesmo sítio onde se entra nela.
-const FUNDO_DA_ENTRADA = require('./assets/login-bg.png');
+const FUNDO_DA_ENTRADA = require('./assets/login-bg.jpg');
 
 // A lista que o ecrã mostra quando não há agenda da Google ligada. Está aqui,
 // e não dentro do JSX, para ser óbvio que é demonstração e não dados.
@@ -425,7 +425,7 @@ function Shell() {
   // haver coluna limitada: não se via. Passou a ver-se, e uma cor lisa ao lado
   // da coluna é uma moldura que ninguém escolheu.
   //
-  // Fica a MESMA imagem do ecrã de entrada, com o mesmo véu — `login-bg.png`
+  // Fica a MESMA imagem do ecrã de entrada, com o mesmo véu — `login-bg.jpg`
   // sob `rgba(0,0,0,0.6)`, como em `src/screens/Login.jsx`. A app deixa de
   // parecer uma janela a flutuar num rectângulo escuro e passa a estar assente
   // no sítio onde se entrou nela.

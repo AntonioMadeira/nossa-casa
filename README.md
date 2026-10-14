@@ -76,6 +76,6 @@ O desenho de cada uma está medido ao pixel no `README.md` do pacote de entrega,
 
 **Tipos de letra.** O código pede Roboto e Inter. Instale-os com `expo-font` ou substitua por `System` em `theme.js`; sem isso, o Android cai no tipo padrão.
 
-**Licença da fotografia de entrada.** `assets/login-bg.png` vem do sistema de design e pode não estar liberta para publicação.
+**Licença da fotografia de entrada.** `assets/login-bg.jpg` vem do sistema de design e pode não estar liberta para publicação.
 
 **Google Calendar** exige verificação da Google, e o processo leva semanas. Comece por aí.

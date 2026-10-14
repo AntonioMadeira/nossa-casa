@@ -73,7 +73,7 @@ Two flows take over the whole screen (navbar and bottom menu hidden): **Modo Com
 
 **Purpose:** authenticate an adult via Google, or hand the device to a child.
 
-**Layout:** full-bleed photographic background (`assets/login-bg.png`, `background-size: cover; background-position: center`) with a `rgba(0,0,0,.6)` overlay. Product name block absolutely positioned at `top: 76px; left: 16px`. A frosted glass panel is pinned to the bottom: `background: rgba(0,0,0,.6); backdrop-filter: blur(60px); border-radius: 8px; padding: 24px 20px;` inside a container with `padding: 0 16px 44px`. Column gap 20px.
+**Layout:** full-bleed photographic background (`assets/login-bg.jpg`, `background-size: cover; background-position: center`) with a `rgba(0,0,0,.6)` overlay. Product name block absolutely positioned at `top: 76px; left: 16px`. A frosted glass panel is pinned to the bottom: `background: rgba(0,0,0,.6); backdrop-filter: blur(60px); border-radius: 8px; padding: 24px 20px;` inside a container with `padding: 0 16px 44px`. Column gap 20px.
 
 **Components:**
 - Title `Nossa Casa` — Roboto Medium 32px, `#FFFFFF`, letter-spacing 0.25px
@@ -468,7 +468,7 @@ Use a real icon library on the target platform rather than porting these SVGs; m
 
 ## Assets
 
-- `design/assets/login-bg.png` — the login backdrop, from the design system's asset set. Photographic, warm, natural light. Production needs a licensed equivalent if this one is not cleared for release.
+- `design/assets/login-bg.jpg` — the login backdrop, from the design system's asset set. Photographic, warm, natural light. Production needs a licensed equivalent if this one is not cleared for release.
 - Invoice and equipment photographs are **user-supplied at runtime**; the prototype uses drop targets as placeholders.
 - The Google "G" mark is drawn inline in official brand colours; use Google's supplied asset and follow their branding guidelines in production.
 - App icon, listing copy and store screenshots are produced and live in `store/` — see *Store Assets*.
