@@ -175,7 +175,7 @@ describe('⚠ «Guardado neste dispositivo» deixou de fingir que é tocável', 
     // Tinha ícone, título e subtítulo — igual à Documentação ao lado, que abre
     // um ecrã. Uma afirmação vestida de navegação.
     expect(semComentarios).not.toMatch(/<Row[^>]*title="Guardado neste dispositivo"/);
-    expect(semComentarios).toMatch(/Guardado neste dispositivo —/);
+    expect(semComentarios).toMatch(/Guardado no servidor da casa —/);
   });
 
   it('e a Documentação, que é tocável, continua a sê-lo', () => {

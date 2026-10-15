@@ -297,9 +297,11 @@ export default function Perfil({ t, user, onClose, onSignOut, onSaude, onDoc, on
           paddingHorizontal: 2, paddingTop: S.md }}>
           <Icon name="lock" size={14} color={t.text3} />
           <Text style={{ flex: 1, fontFamily: FONT.ui, fontSize: 11.5, lineHeight: 18, color: t.text3 }}>
+            {/* Os dados da casa vivem no servidor; o dispositivo guarda só uma
+                cópia de trabalho. Sem sessão, a cópia pode estar atrasada. */}
             {servidor.auth.valida()
-              ? 'Guardado na base de dados da casa — os mesmos dados em todos os dispositivos, incluindo a saúde.'
-              : 'Guardado neste dispositivo — os dados desta casa não saem daqui.'}
+              ? 'Guardado no servidor da casa — os mesmos dados em todos os dispositivos, incluindo a saúde.'
+              : 'Sem ligação ao servidor da casa — o que vê é uma cópia neste dispositivo, que pode não ser a mais recente.'}
           </Text>
         </View>
       </View>
