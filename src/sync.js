@@ -56,6 +56,7 @@ import { eColecaoDeSaude } from './colecoes-de-saude';
 // arraste o RN parte todas elas — já aconteceu com o `Platform`.
 import { chaveDeDMY, dmyDeChave } from './format';
 import { extractosDe } from './extracto-do-mes';
+import { normalizarOrcamento } from './orcamento';
 import { paraOServidor, paraALoja } from './compras-estado';
 
 export { eEnderecoDeCasa, PORQUE_NAO_SOBE };
@@ -606,6 +607,8 @@ export async function puxarCasa() {
   // o `pontos_ligados` precisa, e por isso ele também está aqui.
   const regras = aCasa ? {
     rendimento: Number(aCasa.rendimento_mensal) || 0,
+    // Ausente (casa que nunca escolheu) lê-se como mensal, que é o que sempre foi.
+    orcamento: normalizarOrcamento(aCasa.orcamento),
     pointValue: Number(aCasa.valor_ponto ?? 0.1),
     payDay: Number(aCasa.dia_pagamento ?? 0),
     splitHalf: aCasa.divide_meias !== false,
@@ -1849,6 +1852,8 @@ export async function apagarEnvelope(idNoServidor) {
 // mudado e não mudou.
 const REGRA_NO_SERVIDOR = {
   rendimento: 'rendimento_mensal',
+  // Por mês ou para o ano todo: `{ modo, ano, total, meses }` num campo JSON só.
+  orcamento: 'orcamento',
   pointValue: 'valor_ponto',
   payDay: 'dia_pagamento',
   splitHalf: 'divide_meias',

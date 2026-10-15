@@ -25,6 +25,8 @@ const NUNCA_VAZIAS = {
   // passou a um cartão por área, com o que ela faz escrito à mão. O título já
   // não existe, e a excepção passou a justificar coisa nenhuma — que é
   // exactamente o que a prova de baixo apanha.
+  'src/screens/Gestao.jsx :: Distribuição dos Meses':
+    'os doze meses do ano são uma constante: o gráfico e a folha percorrem sempre doze',
   'src/screens/Gestao.jsx :: Membros e PIN':
     'quem abre a Gestão é membro da casa, logo a lista tem-no sempre',
   // Chamava-se «O Meu Perfil» e passou a «Aparência» quando o ecrã foi

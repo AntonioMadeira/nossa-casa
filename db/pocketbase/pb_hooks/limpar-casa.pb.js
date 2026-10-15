@@ -64,6 +64,11 @@ routerAdd('POST', '/api/casa/limpar', (e) => {
     'anexos', 'episodios_saude',
     'tarefas_feitas', 'artigos', 'listas_compras',
     'cofre_movimentos', 'despesas', 'transferencias', 'acertos',
+    // «Começar de Zero» é apagar TUDO o que a família escreveu. Estas ficavam
+    // para trás: nenhuma cascateia da casa nem dos membros, que ficam.
+    'trocas_tarefas', 'partilhas_lista', 'ementa', 'pratos',
+    'meta_movimentos', 'objetivos_cofre', 'contas_fixas', 'contratos',
+    'registo', 'seccoes',
     'manutencoes', 'eventos', 'tarefas', 'equipamentos',
     'envelopes', 'metas', 'meses',
     'lojas', 'categorias_equip', 'especialidades', 'preferencias',

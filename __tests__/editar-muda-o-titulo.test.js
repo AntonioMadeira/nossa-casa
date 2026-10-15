@@ -135,10 +135,10 @@ describe('o equipamento: a ficha altera o que a folha de registar pede', () => {
     // constante ficou como SEMENTE, para quem corre sem servidor.
     const modulo = ler('src/categorias-de-equipamento.js');
     expect(modulo).toMatch(/export const CATEGORIAS_DE_EQUIPAMENTO = \[/);
-    expect(modulo).toMatch(/export const categoriasDaCasa = \(lista\) =>/);
+    expect(modulo).toMatch(/export const categoriasDaCasa = \(lista, propria = false\) =>/);
     const ecra = semComentarios(ler('src/screens/Equipamentos.jsx'));
-    expect(ecra).toMatch(/categoriasDaCasa\(s\.equipCats\)/);
-    expect(ficha).toMatch(/categoriasDaCasa\(daCasa\.equipCats\)/);
+    expect(ecra).toMatch(/categoriasDaCasa\(s\.equipCats, s\.equipCatsProprias\)/);
+    expect(ficha).toMatch(/categoriasDaCasa\(daCasa\.equipCats, daCasa\.equipCatsProprias\)/);
     // Um módulo, dois leitores — continua a ser a propriedade.
     for (const f of [ecra, ficha]) {
       expect(f).toMatch(/from '\.\.?\/categorias-de-equipamento'/);

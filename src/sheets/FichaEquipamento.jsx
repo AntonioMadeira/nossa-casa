@@ -14,6 +14,7 @@ import { lerComoDataURI } from '../ler-imagem';
 import PreVisualizarPDF from '../PreVisualizarPDF';
 import { CATEGORIAS_DE_EQUIPAMENTO, categoriasDaCasa } from '../categorias-de-equipamento';
 import CampoDeEscolha from '../CampoDeEscolha';
+import CriarCategoriaDeEquipamento from '../CriarCategoriaDeEquipamento';
 
 // Estado da garantia: a mesma regra de três estados da lista, para a ficha e a
 // lista nunca discordarem.
@@ -38,7 +39,7 @@ const ANEXOS = [
 export default function FichaEquipamento({ t, equip, user = null, onClose }) {
   const { s: daCasa, editEquip, removeEquip, nomeDaCasa } = useStore();
   // A lista da CASA, com recuo para as sementes — ver `categoriasDaCasa`.
-  const categorias = categoriasDaCasa(daCasa.equipCats);
+  const categorias = categoriasDaCasa(daCasa.equipCats, daCasa.equipCatsProprias);
   const [remover, setRemover] = useState(false);
   const [manut, setManut] = useState(null);   // rascunho da manutenção
   // A exportação da fatura: `null` parada, `'a preparar'`, ou a frase do fim.
@@ -255,7 +256,9 @@ export default function FichaEquipamento({ t, equip, user = null, onClose }) {
           valor={form.cat}
           opcoes={categorias.map(c => ({ valor: c, titulo: c }))}
           aoEscolher={(c) => setForm(f => ({ ...f, cat: c }))}
-          vazio="Esta casa ainda não tem categorias." />
+          vazio="Esta casa ainda não tem categorias."
+              acaoVazia={<CriarCategoriaDeEquipamento t={t} user={user}
+                aoCriar={(c) => setForm(f => ({ ...f, cat: c }))} />} />
 
         {/* O preço e a data de compra, lado a lado — e por baixo o fim da
             garantia, que é o que se lê na caixa lá em cima (15/09/2026, opção E

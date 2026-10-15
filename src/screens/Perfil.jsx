@@ -100,8 +100,9 @@ export default function Perfil({ t, user, onClose, onSignOut, onSaude, onDoc, on
     },
     zero: {
       titulo: 'Começar de Zero',
-      aviso: 'Esta acção apaga os dados desta casa — eventos, tarefas, despesas, '
-        + 'cofres, equipamentos e preços — NESTE APARELHO E NO SERVIDOR. '
+      aviso: 'Esta acção apaga TUDO o que esta casa registou — eventos, tarefas, despesas, '
+        + 'envelopes, metas, contas fixas, cofres, equipamentos, preços e saúde — '
+        + 'NESTE APARELHO E NO SERVIDOR. '
         + 'Os membros e os papéis ficam. Não se desfaz.',
       rotulo: 'Apagar os dados da casa',
       // O servidor PRIMEIRO, e a loja local só depois.

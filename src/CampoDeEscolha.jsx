@@ -102,7 +102,7 @@ function OpcaoDaFolha({ t, opcao, escolhida, grande, aoTocar, ultima }) {
  */
 export default function CampoDeEscolha({
   t, rotulo, valor, opcoes = [], aoEscolher,
-  titulo, sub, porEscolher = 'Por escolher', vazio, dicaVazia, iconeDoCampo,
+  titulo, sub, porEscolher = 'Por escolher', vazio, dicaVazia, iconeDoCampo, acaoVazia,
   grande = false, pesquisaAcimaDe = PESQUISA_ACIMA_DE,
 }) {
   const [aberto, setAberto] = useState(false);
@@ -119,6 +119,8 @@ export default function CampoDeEscolha({
         {rotulo ? <Label t={t}>{rotulo}</Label> : null}
         <Empty t={t} icon={iconeDoCampo || 'closeCircle'}
           title={vazio || 'Nada para escolher.'} hint={dicaVazia} />
+        {/* A saída, quando quem olha a pode dar: criar a primeira opção. */}
+        {acaoVazia || null}
       </View>
     );
   }

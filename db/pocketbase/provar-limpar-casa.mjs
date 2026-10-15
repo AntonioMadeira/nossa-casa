@@ -50,6 +50,12 @@ const semear = async (casa, dono) => {
   await tenta('envelopes', { nome: 'Mercearia', limite: 550 });
   await tenta('lojas', { nome: 'Continente' });
   await tenta('especialidades', { nome: 'Dentista' });
+  // As que ficavam para trás: não cascateiam da casa nem dos membros.
+  await tenta('contas_fixas', { nome: 'Renda', valor: 850, dia: 1 });
+  await tenta('seccoes', { nome: 'Frescos', posto: 1 });
+  await tenta('pratos', { nome: 'Sopa', ingredientes: [] });
+  await tenta('metas', { nome: 'Férias', alvo: 1000 });
+  await tenta('registo', { texto: 'uma linha do registo' });
 
   // ⚠ E SAÚDE, que faltava. Esta prova semeava cinco coleções e nenhuma delas
   // era de saúde — portanto media «a casa esvazia-se» olhando só para onde já
@@ -79,7 +85,9 @@ const quantos = async (casa) => {
   // que pode sobreviver ao «Começar de Zero» sem esta prova reparar.
   for (const c of ['eventos', 'tarefas', 'envelopes', 'lojas', 'especialidades',
     'episodios_saude', 'notas_saude', 'receitas_saude', 'decisoes_saude',
-    'tomas_saude', 'alergias_saude', 'anexos']) {
+    'tomas_saude', 'alergias_saude', 'anexos',
+    'contas_fixas', 'seccoes', 'pratos', 'metas', 'registo', 'contratos', 'ementa',
+    'meta_movimentos', 'objetivos_cofre', 'trocas_tarefas', 'partilhas_lista']) {
     try {
       n += (await admin.collection(c).getFullList({ filter: `casa = "${casa.id}"` })).length;
     } catch (e) { /* segue */ }

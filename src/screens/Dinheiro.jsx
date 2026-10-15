@@ -33,7 +33,7 @@ export { NumField } from '../ui';
 export default function Dinheiro({ t, user, onEquip }) {
   const st = useStore();
   const { s, set, envelopes, budget, spent, remaining, mesAberto, allEquip, isAdmin, membros: MEMBERS, adultos, criancas, acerto, acertado, pagarAcerto, oNome, aoNome, moverEntreEnvelopes, registarDespesa,
-          abrirMes, fecharMes, metas, reforcarMeta, apagarMeta, kidPts, pontosNasTarefas,
+          abrirMes, fecharMes, rendimentoDoMes, metas, reforcarMeta, apagarMeta, kidPts, pontosNasTarefas,
           contasDoMes, pagarContaFixa, apagarContaFixa, extractoDoMesAberto, extractosDaCasa } = st;
   const [sheet, setSheet] = useState(null);
   // O extracto com a folha aberta — o do mês em curso, ou o do que acabou de
@@ -88,7 +88,7 @@ export default function Dinheiro({ t, user, onEquip }) {
   // ficou de fora. E é toda em euros — a percentagem obrigava a família a fazer
   // a conta de cabeça para saber de quanto dinheiro se estava a falar, num ecrã
   // onde todos os outros números já são euros. As três parcelas somam.
-  const rendimento = s.rendimento || 0;
+  const rendimento = rendimentoDoMes || 0;
   const semEnvelope = Math.max(0, rendimento - budget);
   // Os meses vêm do `format.js`, onde já viviam. Uma segunda lista escrita à
   // mão aqui era um sítio a mais para divergir — e divergiu: esta tinha os

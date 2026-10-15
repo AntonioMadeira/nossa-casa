@@ -312,6 +312,10 @@ const aplicarCampos = async (nome, campos) => {
 const CAMPOS_DA_CASA = [
     txt('nome', { required: true }),
     num('rendimento_mensal', { min: 0 }),
+    // O orçamento por mês ou para o ano: `{ modo, ano, total, meses }`. Ausente
+    // lê-se como mensal — é o que a casa sempre fez. Nasce também na tabela
+    // `CAMPOS` do `acrescentar-campos.mjs`.
+    json('orcamento'),
     // §4: o valor do ponto é validado no SERVIDOR, não só no campo.
     //
     // ⚠ Mínimo 0, e não 0,01. Os pontos passaram a ser opcionais em

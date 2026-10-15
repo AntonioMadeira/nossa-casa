@@ -5,6 +5,8 @@ import { TASKS, ITEMS, EVENTS, EQUIP, ENV_BASE, SECTIONS, MEMBERS, ROLES, HEALTH
 import { TODAY_KEY, TODAY, MONTHS, dueInfo, daysUntil, warrantyDaysLeft, chaveDeDMY,
          chaveRelativa, plural, EUR, parseKey, dkey, pad2, agoraNaApp } from './format';
 import { chaveDaReceita, planoDaReceita } from './medicacao';
+import { ORCAMENTO_BASE, rendimentoDoMes as rendimentoDoMesDe, fatorDoMes,
+         doMensalParaAnual, doAnualParaMensal, normalizarOrcamento } from './orcamento';
 import { iconesDosCorredores, donoDeCadaIcone, corredoresPorEscolher,
          ICONE_POR_ESCOLHER } from './icone-do-corredor';
 import { observacao, precosDe, estimativaDe, compararLojas } from './precos';
@@ -284,13 +286,13 @@ const BACKUPS_ANTIGOS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(n => `${KEY}.ant
 const DATA_KEYS = [
   'done', 'pending', 'status', 'registered', 'gastoLocal', 'acertoMovs', 'partilhasPagas', 'despesasMeias', 'gastoPorEnvelope', 'vaultMoves', 'paidPts',
   'envMove', 'added', 'newTasks', 'taskEdits', 'taskGone', 'taskOrder', 'pontosDeTarefasApagadas',
-  'newItems', 'itemGone', 'itemEdits', 'itemOrder', 'feitas', 'listasIds', 'envelopesDaCasa', 'seccoesDaCasa', 'iconesDeSeccao', 'mes',
+  'newItems', 'itemGone', 'itemEdits', 'itemOrder', 'feitas', 'listasIds', 'envelopesDaCasa', 'envelopesProprios', 'seccoesDaCasa', 'iconesDeSeccao', 'mes',
   'metasDaCasa', 'metaMovs', 'metasProprias', 'objetivosCofre', 'pratos', 'ementa',
   'contasFixas', 'contasPagas', 'contratos', 'trocas', 'extractos',
   'newEquip', 'equipGone', 'equipEdits', 'schemeByUser', 'themeByUser', 'notif',
   'rotate', 'urg', 'due', 'monthName', 'monthLimits', 'monthZero', 'clearedSeeds',
   'eventGone', 'eventEdits', 'roles', 'pins', 'pontosLigados', 'ementaDesligada', 'iconesDesligados', 'pointValue', 'payDay', 'splitHalf',
-  'rendimento', 'stores', 'shopPlan', 'shopHistory', 'precos', 'precoPago', 'health', 'specialities', 'equipCats', 'registo',
+  'rendimento', 'orcamento', 'stores', 'shopPlan', 'shopHistory', 'precos', 'precoPago', 'health', 'specialities', 'equipCats', 'equipCatsProprias', 'registo',
   'recurringReset', 'healthNotes', 'healthRecipes', 'healthDecisions', 'healthDocs', 'healthGone',
   'healthArchived', 'healthTomas', 'healthAlergias',
   'googleCalendarImported', // Google Calendar imports
@@ -631,6 +633,10 @@ export const DEMO = () => ({
   // Os envelopes da casa, quando vêm do servidor. Vazio = corre com as
   // sementes do `ENV_BASE`, como antes de haver servidor.
   envelopesDaCasa: [],
+  // Se a CASA é dona da lista de envelopes, ou se ainda corre com as sementes.
+  // Distingue «a casa apagou todos» de «ninguém mexeu», que uma lista vazia não
+  // distingue — apagar o último envelope trazia as quatro sementes de volta.
+  envelopesProprios: false,
   // O mês aberto, quando vem do servidor: o id da linha, o dia em que abriu, e
   // os limites dele. Nulo = a casa ainda não abriu nenhum.
   mes: null,
@@ -715,6 +721,8 @@ export const DEMO = () => ({
   // como dinheiro — «cinco pontos» sem euros por trás.
   pointValue: 0.10, payDay: 0, splitHalf: true,
   rendimento: 3200,              // o que entra por mês; os envelopes saem daqui
+  // Por mês (como sempre) ou para o ano todo — ver `src/orcamento.js`.
+  orcamento: ORCAMENTO_BASE(),
   stores: ['Continente de Belém', 'Pingo Doce da Ajuda', 'Mercado de Alcântara'],
   shopPlan: {
     who: Object.keys(MEMBERS).filter(n => !MEMBERS[n].kid)[1] || Object.keys(MEMBERS)[0],
@@ -751,6 +759,9 @@ export const DEMO = () => ({
   precoPago: {},
   health: [], specialities: ['Medicina geral', 'Dentista', 'Pediatria', 'Oftalmologia'],
   equipCats: ['Eletrodomésticos', 'Aquecimento', 'Informática', 'Outros'],
+  // Se a CASA é dona da lista de categorias (pode ser vazia), ou se ainda corre
+  // com as quatro sementes — ver `categoriasDaCasa`.
+  equipCatsProprias: false,
   registo: [],
   recurringReset: {}, // taskId -> TODAY_KEY when reset
   healthNotes: {}, // healthId -> [{ author, date, text }]
@@ -808,6 +819,7 @@ export const SEM_DINHEIRO_SEMEADO = () => ({
   monthZero: true,                                     // nada gasto ainda
   monthLimits: Object.fromEntries(ENV_BASE.map(e => [e.name, 0])),
   rendimento: 0,
+  orcamento: ORCAMENTO_BASE(),
   registered: 0,
   // ⚠ E a repartição também. O `registered` sozinho deixava os envelopes a
   // mostrar o gasto da demonstração numa casa que se acabou de esvaziar — a
@@ -822,6 +834,17 @@ export const BLANK = () => ({
   healthNotes: {}, healthRecipes: {}, healthDecisions: {}, healthTomas: {}, healthAlergias: {}, googleCalendarImported: {},
   healthDocs: [], healthGone: {}, healthArchived: {}, filaGoogle: [],
   ...SEM_DINHEIRO_SEMEADO(),
+  // «Começar de Zero» apaga TUDO, e não deixa um ponto de partida: nem os
+  // envelopes (a `SEM_DINHEIRO_SEMEADO` guarda-os com os valores a zero, e é o
+  // que serve a uma casa acabada de ligar — aqui não), nem as metas, as contas
+  // fixas, os pratos, as lojas. As bandeiras `...Proprios` dizem que a lista
+  // vazia é da casa; sem elas as sementes voltavam.
+  envelopesDaCasa: [], envelopesProprios: true, monthLimits: {}, envMove: {}, gastoPorEnvelope: {},
+  metasDaCasa: [], metasProprias: true, metaMovs: [], objetivosCofre: {},
+  contasFixas: [], contasPagas: [], contratos: [], pratos: [], ementa: {}, trocas: [],
+  extractos: [], acertoMovs: [], partilhasPagas: {}, despesasMeias: 0,
+  stores: [], precos: [], precoPago: {}, registo: [], mes: null,
+  specialities: [], equipCats: [], equipCatsProprias: true,
 });
 
 // ── O `id` de uma nota de saúde ──────────────────────────────────────────────
@@ -1103,7 +1126,7 @@ export function StoreProvider({ children }) {
       // reescreve. Fundi-lo com o local voltava a somar duas vezes o que este
       // telefone já mandou.
       if ((casa.envelopesDaCasa || []).length) {
-        set({ envelopesDaCasa: casa.envelopesDaCasa, envMove: casa.envMove || {} });
+        set({ envelopesDaCasa: casa.envelopesDaCasa, envelopesProprios: true, envMove: casa.envMove || {} });
       }
 
       // ⚠ E o GASTO do mês, que o `puxarCasa` calculava e NINGUÉM aplicava.
@@ -1876,8 +1899,9 @@ function build(s, set, mapaServidor = { current: { casa: null, membros: {}, enve
   // 1 387,00 € a desaparecer e o «Disponível» a subir outro tanto, por se ter
   // criado um envelope chamado «Férias». Com servidor o número vinha certo na
   // leitura seguinte e por isso passou despercebido.
-  const baseDeEnvelopes = (s.envelopesDaCasa || []).length
-    ? s.envelopesDaCasa.map(e => ({ ...e, used: e.used || 0 }))
+  // ⚠ E a bandeira, não o comprimento: a casa que apagou todos tem zero.
+  const baseDeEnvelopes = (s.envelopesProprios || (s.envelopesDaCasa || []).length)
+    ? (s.envelopesDaCasa || []).map(e => ({ ...e, used: e.used || 0 }))
     : ENV_BASE;
 
   // ⚠ O gasto de cada envelope é o DELE, e não o do mês inteiro.
@@ -1922,13 +1946,23 @@ function build(s, set, mapaServidor = { current: { casa: null, membros: {}, enve
   // de um número errado para sempre.
   const gastoLocal = s.gastoLocal || {};
 
+  // O orçamento por mês ou para o ano (`src/orcamento.js`). Em modo anual o
+  // limite de cada envelope — o do mês médio — multiplica-se pelo peso do mês
+  // corrente; em modo mensal o fator é 1 e isto não faz nada. O fator aplica-se
+  // ANTES das transferências: mover dinheiro entre envelopes é euros, não peso.
+  const orcamentoDaCasa = normalizarOrcamento(s.orcamento);
+  const mesCorrente = new Date().getMonth();
+  const fatorDoMesCorrente = fatorDoMes(orcamentoDaCasa, mesCorrente);
+  const rendimentoDoMes = rendimentoDoMesDe(orcamentoDaCasa, mesCorrente, s.rendimento);
+  const arredonda2 = (v) => Math.round(v * 100) / 100;
+
   const envelopes = baseDeEnvelopes.map(e => ({
     ...e,
     used: (temGastoDoServidor
       ? (gastoNoEnvelope[e.name] || 0)
       : (s.monthZero ? 0 : e.used)) + (gastoLocal[e.name] || 0),
-    limit: (s.monthLimits && s.monthLimits[e.name] !== undefined
-      ? s.monthLimits[e.name] : e.limit) + (s.envMove[e.name] || 0),
+    limit: arredonda2((s.monthLimits && s.monthLimits[e.name] !== undefined
+      ? s.monthLimits[e.name] : e.limit) * fatorDoMesCorrente) + (s.envMove[e.name] || 0),
   }));
 
   // O gasto é a soma dos envelopes, nunca um número à parte. Estava escrito à
@@ -3847,8 +3881,8 @@ function build(s, set, mapaServidor = { current: { casa: null, membros: {}, enve
   // deixava a casa com UM envelope e os outros quatro desapareciam.
   // ⚠ E o `used` das sementes acompanha (15/09/2026): materializar a lista sem
   // ele apagava o gasto de toda a casa numa app sem servidor.
-  const listaDeEnvelopes = (x) => ((x.envelopesDaCasa || []).length
-    ? x.envelopesDaCasa
+  const listaDeEnvelopes = (x) => ((x.envelopesProprios || (x.envelopesDaCasa || []).length)
+    ? (x.envelopesDaCasa || [])
     : ENV_BASE.map(e => ({ id: null, name: e.name, limit: e.limit, color: e.color || null, used: e.used || 0 })));
 
   // ⚠ E escreve-se LOCAL PRIMEIRO, como tudo o resto nesta app.
@@ -3861,6 +3895,7 @@ function build(s, set, mapaServidor = { current: { casa: null, membros: {}, enve
     const n = String(nome || '').trim();
     if (!n) return;
     set(x => ({
+      envelopesProprios: true,
       envelopesDaCasa: [...listaDeEnvelopes(x), { id: null, name: n, limit: limite, color: null }],
       monthLimits: { ...(x.monthLimits || {}), [n]: limite },
       // ⚠ E no registo da casa (15/09/2026): um envelope novo soma ao orçamento
@@ -3904,7 +3939,7 @@ function build(s, set, mapaServidor = { current: { casa: null, membros: {}, enve
         lista = lista.map(e => (e.name === novoNome ? { ...e, limit: v } : e));
         if (novoNome in limites) limites[novoNome] = v;
       }
-      return { envelopesDaCasa: lista, monthLimits: limites,
+      return { envelopesProprios: true, envelopesDaCasa: lista, monthLimits: limites,
         registo: maisRegisto(x, novoNome !== nome
           ? `Envelope «${nome}» passou a «${novoNome}»`
           : `Envelope «${novoNome}»: limite ${EUR(Number(campos.limite) || 0)}`, 'Dinheiro') };
@@ -3921,6 +3956,7 @@ function build(s, set, mapaServidor = { current: { casa: null, membros: {}, enve
       const limites = { ...(x.monthLimits || {}) };
       delete limites[nome];
       return {
+        envelopesProprios: true,
         envelopesDaCasa: listaDeEnvelopes(x).filter(e => e.name !== nome),
         monthLimits: limites,
         registo: maisRegisto(x, `Envelope «${nome}» apagado`, 'Dinheiro'),
@@ -4144,6 +4180,37 @@ function build(s, set, mapaServidor = { current: { casa: null, membros: {}, enve
       const ses = sync.sessao();
       if (ses && ses.casa) sync.regrasDaCasa(ses.casa, campos).catch(() => {});
     }
+  };
+
+  // ── O orçamento: rendimento, e por mês ou para o ano ──────────────────────
+  //
+  // Uma porta só para os três botões do separador Orçamento da Gestão:
+  //   { rendimento }  o rendimento mensal (modo mensal)
+  //   { modo }        'anual' parte do que a casa já tem a doze vezes; 'mensal'
+  //                   fica com o rendimento do mês em que se estava
+  //   { total }       o rendimento do ANO (modo anual); redistribui por igual
+  //   { meses }       os doze valores, à mão — têm de somar o total
+  // Sobe para a casa como o `rendimento` e as outras regras: é da CASA, e o
+  // outro adulto tem de ver o mesmo orçamento.
+  const definirOrcamento = ({ rendimento, modo, total, meses }) => {
+    const atual = normalizarOrcamento(s.orcamento);
+    const mes = new Date().getMonth();
+    const ano = atual.ano || new Date().getFullYear();
+    let campos = {};
+    if (rendimento !== undefined) campos.rendimento = Math.max(0, Number(rendimento) || 0);
+    if (modo === 'anual' && atual.modo !== 'anual') {
+      campos.orcamento = doMensalParaAnual(s.rendimento, ano);
+    } else if (modo === 'mensal' && atual.modo === 'anual') {
+      campos = { ...campos, ...doAnualParaMensal(atual, mes) };
+    }
+    const base = campos.orcamento || atual;
+    if (base.modo === 'anual' && total !== undefined) {
+      campos.orcamento = { ...base, total: Math.max(0, Number(total) || 0), meses: null };
+    } else if (base.modo === 'anual' && Array.isArray(meses)) {
+      campos.orcamento = { ...base, meses: meses.map(Number) };
+    }
+    if (!Object.keys(campos).length) return;
+    mudarRegraDaCasa(campos);
   };
 
   // ── Criar uma tarefa ────────────────────────────────────────────────────
@@ -5931,6 +5998,25 @@ function build(s, set, mapaServidor = { current: { casa: null, membros: {}, enve
   // `quem` a chamada não passa: um esquecimento não pode abrir a porta.
   const SO_ADMIN = 'Só quem administra a casa pode gerir as especialidades.';
 
+  const SO_ADMIN_CATEGORIAS = 'Só quem administra a casa pode criar categorias.';
+
+  const addEquipCat = (nome, quem) => {
+    if (!isAdmin(quem)) return SO_ADMIN_CATEGORIAS;
+    const n = String(nome || '').trim();
+    if (!n) return 'A categoria precisa de um nome.';
+    if (n.length > 40) return 'O nome não pode passar de 40 caracteres.';
+    if ((s.equipCats || []).some(e => e.toLowerCase() === n.toLowerCase())) {
+      return 'Já existe uma categoria com esse nome.';
+    }
+    set(x => ({
+      equipCatsProprias: true,
+      equipCats: [...(x.equipCats || []), n],
+      registo: maisRegisto(x, `Categoria de equipamento criada: ${n}`, 'Equipamentos'),
+    }));
+    listaAcrescenta('equipCats', n);
+    return null;
+  };
+
   const addSpecialty = (nome, quem) => {
     if (!isAdmin(quem)) return SO_ADMIN;
     const n = String(nome || '').trim();
@@ -6101,6 +6187,7 @@ function build(s, set, mapaServidor = { current: { casa: null, membros: {}, enve
     s, set,
     allTasks, allItems, allEvents, allEquip, editEquip, removeEquip, removerArtigo,
     budget, spent, remaining: budget - spent, envelopes, kidPts,
+    rendimentoDoMes, definirOrcamento, mesCorrente,
     mesAberto, mesAbertoDesde,
     vaultOf, vaultMoves, vaultAdd,
     // As metas: a lista já com o juntado somado, e as quatro operações.
@@ -6160,7 +6247,7 @@ function build(s, set, mapaServidor = { current: { casa: null, membros: {}, enve
     alergiasDe, criarAlergia, apagarAlergia, fichaDeEmergencia,
     addHealthDoc, arquivarConsulta, docsDaConsulta, estaArquivada,
     apagarConsulta, porqueNaoApaga, oQueCaiCom, lerSaudeDoServidor,
-    addSpecialty, removeSpecialty, renameSpecialty, consultasDaEspecialidade,
+    addSpecialty, addEquipCat, removeSpecialty, renameSpecialty, consultasDaEspecialidade,
     reordenarTarefas,
     // ⚠ UMA leitura da bandeira, e não `s.pontosLigados !== false` repetido em
     // seis ecrãs. O `!== false` é preciso porque uma casa gravada antes de

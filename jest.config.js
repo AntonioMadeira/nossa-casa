@@ -12,5 +12,10 @@ module.exports = {
     'src/**/*.{js,jsx}',
     '!src/**/*.test.{js,jsx}',
   ],
+  // ⚠ 30 s e não os 5 por omissão. Com 140 suites em paralelo a primeira
+  // montagem da loja num jsdom carregado passa dos 5 s — `escolher-avatar` e
+  // `apagar-consulta` falhavam só na corrida completa, e passavam isolados em
+  // 5 s. Não era um defeito do código: era o relógio.
+  testTimeout: 30000,
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
 };

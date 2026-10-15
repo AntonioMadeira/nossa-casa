@@ -169,7 +169,10 @@ describe('a Gestão da Casa', () => {
     const fs = require('fs');
     const path = require('path');
     const codigo = fs.readFileSync(path.join(__dirname, '..', 'src/screens/Gestao.jsx'), 'utf8');
-    const campo = codigo.slice(codigo.indexOf('<NumField'), codigo.indexOf('<NumField') + 220);
+    // O campo do valor do ponto — o separador Orçamento tem outros NumField acima
+    // (rendimento, meses), e o primeiro do ficheiro já não é este.
+    const inicio = codigo.indexOf('<NumField t={t} value={pontoAEscrever');
+    const campo = codigo.slice(inicio, inicio + 220);
     // ⚠ O valor mostrado é o rascunho ENQUANTO se escreve, e o da casa quando
     // não se está a escrever (15/09/2026): o `NumField` passou a dar o valor a
     // cada tecla, e a casa só se escreve no valor assente — ver o

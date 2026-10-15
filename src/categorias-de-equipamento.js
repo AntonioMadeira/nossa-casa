@@ -20,8 +20,12 @@ export const CATEGORIAS_DE_EQUIPAMENTO = ['Eletrodomésticos', 'Aquecimento', 'I
 
 /**
  * As categorias desta casa: a lista do servidor, ou as sementes enquanto ela
- * não existir. Nunca devolve vazio — uma folha com um campo sem opções é uma
- * promessa que não se cumpre.
+ * não existir.
+ *
+ * ⚠ `propria` é «a casa é dona da lista», e então uma lista VAZIA é a lista —
+ * é o que o «Começar de Zero» deixa. Sem ela (casa que nunca mexeu), vazia quer
+ * dizer «ainda não há» e valem as sementes. Os campos que a leem têm de saber
+ * mostrar o vazio, com a saída de criar a primeira categoria.
  */
-export const categoriasDaCasa = (lista) =>
-  (Array.isArray(lista) && lista.length ? lista : CATEGORIAS_DE_EQUIPAMENTO);
+export const categoriasDaCasa = (lista, propria = false) =>
+  (Array.isArray(lista) && (lista.length || propria) ? lista : CATEGORIAS_DE_EQUIPAMENTO);

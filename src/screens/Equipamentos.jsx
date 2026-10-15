@@ -13,6 +13,7 @@ import NovoContrato from '../sheets/NovoContrato';
 import { estadoDoContrato, linhaDoContrato } from '../contratos';
 import { CATEGORIAS_DE_EQUIPAMENTO, categoriasDaCasa } from '../categorias-de-equipamento';
 import CampoDeEscolha from '../CampoDeEscolha';
+import CriarCategoriaDeEquipamento from '../CriarCategoriaDeEquipamento';
 
 // dd/mm/aaaa → milissegundos UTC. É o formato em que as datas são guardadas.
 const parseDMY = (s) => {
@@ -47,7 +48,7 @@ export default function Equipamentos({ t, user = null, abrir }) {
   // constante de quatro, e o `equipCats` — que o servidor enche e o `puxarCasa`
   // desce — não era lido por ecrã nenhum. Uma categoria escrita no servidor
   // nunca aparecia. Ver `categoriasDaCasa`.
-  const categorias = categoriasDaCasa(s.equipCats);
+  const categorias = categoriasDaCasa(s.equipCats, s.equipCatsProprias);
   const [sheet, setSheet] = useState(null);
   const abreContrato = typeof abrir === 'string' && abrir.startsWith('contrato:');
   const [ficha, setFicha] = useState(abrir && !abreContrato ? abrir : null);   // equipamento cuja ficha está aberta
@@ -306,7 +307,9 @@ export default function Equipamentos({ t, user = null, abrir }) {
               valor={form.cat}
               opcoes={categorias.map(c => ({ valor: c, titulo: c }))}
               aoEscolher={(c) => setForm(f => ({ ...f, cat: c }))}
-              vazio="Esta casa ainda não tem categorias." />
+              vazio="Esta casa ainda não tem categorias."
+              acaoVazia={<CriarCategoriaDeEquipamento t={t} user={user}
+                aoCriar={(c) => setForm(f => ({ ...f, cat: c }))} />} />
 
             <View style={{ gap: S.sm }}>
               <Label t={t}>Data de compra</Label>

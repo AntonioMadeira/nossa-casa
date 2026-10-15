@@ -108,6 +108,20 @@ describe('⚠ o orçamento bate certo com a lista', () => {
     expect(ler().budget).not.toBe(0);
   });
 
+  it('⚠ apagar TODOS os envelopes deixa a lista vazia — as sementes não voltam', () => {
+    // Uma lista vazia era lida como «ninguém mexeu» e trazia as quatro
+    // sementes de volta. A bandeira `envelopesProprios` é quem decide.
+    const ler = loja();
+    ler().envelopes.map(e => e.name).forEach((nome) => {
+      TestRenderer.act(() => { ler().apagarEnvelope(nome); });
+    });
+    expect(ler().envelopes).toHaveLength(0);
+    expect(ler().budget).toBe(0);
+    // E criar um a seguir não ressuscita os antigos.
+    TestRenderer.act(() => { ler().criarEnvelope('Férias', 300); });
+    expect(ler().envelopes.map(e => e.name)).toEqual(['Férias']);
+  });
+
   it('e o que sobra sem envelope nunca é negativo nem maior que o rendimento', () => {
     const ler = loja();
     const st = ler();

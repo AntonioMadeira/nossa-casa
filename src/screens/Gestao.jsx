@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView } from 'react-native';
 import { useStore } from '../store';
 import { S, R, FONT } from '../theme';
-import { EUR, mesComAno, mesSeguinte, dmyDeChave } from '../format';
+import { EUR, mesComAno, mesSeguinte, dmyDeChave, MONTHS } from '../format';
+import { normalizarOrcamento, mesesDoOrcamento, ajustarMes, somaDosMeses, MESES_DO_ANO } from '../orcamento';
 import { Card, SectionTitle, Linha, Label, Primary, AddButton, Row, Tap, Avatar, Tile, Segmented, Toggle, Pill, Choice, Empty, avatarDe, NumField, BotaoCompacto } from '../ui';
 import Icon from '../Icon';
 import Sheet from '../Sheet';
@@ -64,7 +65,7 @@ export default function Gestao({ t, user, onClose }) {
           kidPts, pontosNasTarefas, mudarRegraDaCasa, mudarListaDaCasa,
           criarEnvelope, alterarEnvelope, apagarEnvelope, membros: MEMBERS, nomeDaCasa, podeGerirCasa,
           renomearCasa, acrescentarMembro, editarMembro, renomearMembro, removerMembro,
-          abrirMes, fecharMes } = useStore();
+          abrirMes, fecharMes, rendimentoDoMes, definirOrcamento, mesCorrente } = useStore();
   const [tab, setTab] = useState('orcamento');
   const [sheetOpen, setSheetOpen] = useState(null);
   const [modal, setModal] = useState(null);
@@ -78,6 +79,12 @@ export default function Gestao({ t, user, onClose }) {
   // último a CHEGAR, que podia ser o «0». A casa só se escreve no valor
   // assente — o `aoTerminar`.
   const [pontoAEscrever, setPontoAEscrever] = useState(null);
+  // O rendimento e o total do ano ENQUANTO se escrevem — pela mesma razão do
+  // `pontoAEscrever`: a casa só se escreve no valor assente.
+  const [rendAEscrever, setRendAEscrever] = useState(null);
+  const [totalAEscrever, setTotalAEscrever] = useState(null);
+  // Os doze meses a meio de uma edição, ou `null` quando a folha está fechada.
+  const [mesesRascunho, setMesesRascunho] = useState(null);
   const [selectedMember, setSelectedMember] = useState(null);
   const [selectedEnvelope, setSelectedEnvelope] = useState(null);
   // O formulário do membro, e a recusa que vier do servidor. O erro é estado
@@ -145,14 +152,105 @@ export default function Gestao({ t, user, onClose }) {
     );
   }
 
+  const orcamento = normalizarOrcamento(s.orcamento);
+  const anual = orcamento.modo === 'anual';
+  const anoDoOrcamento = orcamento.ano || new Date().getFullYear();
+  const valoresDosMeses = mesesDoOrcamento(orcamento);
+  const igualTodosOsMeses = !orcamento.meses;
+  // O que se compara com o atribuído: o rendimento DESTE mês. Em modo anual é
+  // a fatia do mês corrente da distribuição, e não o total do ano.
+  const semEnvelope = Math.max(0, rendimentoDoMes - budget);
+
+  // O `NumField` dos meses só conta o valor ASSENTE (`aoTerminar`): a meio da
+  // escrita nada se redistribui, senão cada tecla mexia nos outros onze meses.
+  const ignorar = () => undefined;
+  const abrirMeses = () => setMesesRascunho(valoresDosMeses.slice());
+  const fecharMeses = () => setMesesRascunho(null);
+  const mexerNoMes = (i, v) => setMesesRascunho(m => ajustarMes(m, i, v, orcamento.total));
+
   const renderBudgetTab = () => (
     <View style={{ gap: S.lg }}>
+      {/* ── Como se faz o orçamento: por mês, ou para o ano todo ─────────────
+          Duas opções fixas: `Segmented`, onde se vêem as duas de uma vez.
+          Mudar de modo não perde nada — mensal → anual começa a doze vezes o
+          rendimento que a casa já tem, e anual → mensal fica com o rendimento
+          do mês em que se estava. */}
+      <View style={{ gap: S.sm }}>
+        <SectionTitle t={t}>Como se Faz o Orçamento</SectionTitle>
+        <Segmented t={t} value={orcamento.modo}
+          options={[{ value: 'mensal', label: 'Todos os meses' }, { value: 'anual', label: 'Para o ano todo' }]}
+          onChange={(modo) => definirOrcamento({ modo })} />
+        <Text style={{ fontFamily: FONT.ui, fontSize: 11.5, lineHeight: 18, color: t.text3 }}>
+          {anual
+            ? 'O rendimento do ano reparte-se pelos meses, e o limite de cada envelope pesa o mesmo que o mês.'
+            : 'Cada mês abre com os mesmos limites. Altere-os quando precisar.'}
+        </Text>
+      </View>
+
+      <Card t={t}>
+        <View style={{ gap: S.sm }}>
+          <Label t={t}>{anual ? `Rendimento de ${anoDoOrcamento}` : 'Rendimento mensal da casa'}</Label>
+          {anual ? (
+            <NumField t={t} value={totalAEscrever ?? orcamento.total} step={500} min={0} max={9999999}
+              rotulo="Rendimento do ano em euros"
+              onChange={setTotalAEscrever}
+              aoTerminar={(v) => { setTotalAEscrever(null); definirOrcamento({ total: v }); }} />
+          ) : (
+            <NumField t={t} value={rendAEscrever ?? (s.rendimento || 0)} step={50} min={0} max={999999}
+              rotulo="Rendimento mensal em euros"
+              onChange={setRendAEscrever}
+              aoTerminar={(v) => { setRendAEscrever(null); definirOrcamento({ rendimento: v }); }} />
+          )}
+          <Text style={{ fontFamily: FONT.ui, fontSize: 11.5, lineHeight: 18, color: t.text3 }}>
+            {anual
+              ? `Em média ${EUR(orcamento.total / MESES_DO_ANO)} por mês. ${MONTHS[mesCorrente]} conta ${EUR(rendimentoDoMes)}.`
+              : 'O que entra por mês. Serve de teto: os envelopes não devem somar mais do que isto.'}
+          </Text>
+        </View>
+      </Card>
+
+      {anual ? (
+        <View style={{ gap: S.sm }}>
+          <SectionTitle t={t}>Distribuição dos Meses</SectionTitle>
+          <Segmented t={t} value={igualTodosOsMeses ? 'igual' : 'meses'}
+            options={[{ value: 'igual', label: 'Igual todos os meses' }, { value: 'meses', label: 'Ajustar meses' }]}
+            onChange={(v) => { if (v === 'igual') definirOrcamento({ total: orcamento.total }); else abrirMeses(); }} />
+          <Card t={t}>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 5, height: 72 }}
+              accessibilityLabel={`Distribuição do orçamento pelos doze meses de ${anoDoOrcamento}`}>
+              {valoresDosMeses.map((v, i) => {
+                const maximo = Math.max(...valoresDosMeses, 1);
+                return (
+                  <View key={i} style={{ flex: 1, height: Math.max(4, Math.round(64 * v / maximo)),
+                    borderTopLeftRadius: 3, borderTopRightRadius: 3,
+                    backgroundColor: i === mesCorrente ? t.accent : t.actBrd }} />
+                );
+              })}
+            </View>
+            <View style={{ flexDirection: 'row', gap: 5, marginTop: 6 }}>
+              {MONTHS.map((m, i) => (
+                <Text key={m} style={{ flex: 1, textAlign: 'center', fontFamily: FONT.ui, fontSize: 11,
+                  color: i === mesCorrente ? t.text2 : t.text3, fontWeight: i === mesCorrente ? '700' : '400' }}>
+                  {m[0]}
+                </Text>
+              ))}
+            </View>
+            <Text style={{ marginTop: S.sm, textAlign: 'center', fontFamily: FONT.ui, fontSize: 11.5, color: t.text3 }}>
+              {igualTodosOsMeses ? `${EUR(orcamento.total / MESES_DO_ANO)} em cada mês` : 'Distribuição à medida'}
+            </Text>
+          </Card>
+        </View>
+      ) : null}
+
       <Card t={t}>
         <View style={{ gap: S.md }}>
           <View>
-            <Label t={t}>Orçamento total mensal</Label>
+            <Label t={t}>{anual ? `Orçamento de ${MONTHS[mesCorrente]}` : 'Orçamento total mensal'}</Label>
             <Text style={{ fontFamily: FONT.display, fontSize: 24, color: t.text2, marginTop: S.sm }}>
               {EUR(budget)}
+            </Text>
+            <Text style={{ fontFamily: FONT.ui, fontSize: 11.5, color: t.text3, marginTop: 2 }}>
+              {`Sem envelope: ${EUR(semEnvelope)}.`}
             </Text>
           </View>
           <View>
@@ -882,6 +980,28 @@ export default function Gestao({ t, user, onClose }) {
           </View>
         </Sheet>
       )}
+
+      {mesesRascunho ? (
+        <Sheet t={t} title="Ajustar os Meses" sub={`Orçamento de ${anoDoOrcamento} · ${EUR(orcamento.total)}`}
+          onClose={fecharMeses}
+          action={<Primary t={t} comum label="Guardar distribuição"
+            onPress={() => { definirOrcamento({ meses: mesesRascunho }); fecharMeses(); }} />}>
+          <View style={{ gap: S.md }}>
+            <Text style={{ fontFamily: FONT.ui, fontSize: 11.5, lineHeight: 18, color: t.text3 }}>
+              O que se mexe num mês sai dos restantes, para o total do ano não mudar.
+              {' '}Distribuído: {EUR(somaDosMeses(mesesRascunho))} de {EUR(orcamento.total)}.
+            </Text>
+            {MONTHS.map((nome, i) => (
+              <View key={nome}>
+                <Label t={t}>{nome}</Label>
+                <NumField t={t} value={mesesRascunho[i]} step={50} min={0} max={Math.max(orcamento.total, 1)}
+                  rotulo={`${nome}, em euros`}
+                  onChange={ignorar} aoTerminar={(v) => mexerNoMes(i, v)} />
+              </View>
+            ))}
+          </View>
+        </Sheet>
+      ) : null}
 
       {sheetOpen === 'newEnvelope' && (
         <Sheet t={t} title="Criar Envelope" sub="Um envelope novo para esta casa, com o seu limite"

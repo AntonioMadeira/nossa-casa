@@ -244,8 +244,8 @@ describe('⚠ os sítios que a opção B levou já não têm pastilhas', () => {
     semFilaSobre('src/sheets/FichaEquipamento.jsx', 'CATEGORIAS_DE_EQUIPAMENTO');
     // E leem-na mesmo — senão isto era só trocar o desenho e deixar o defeito.
     const lerFicheiro = (p) => fs.readFileSync(path.join(RAIZ, p), 'utf8');
-    expect(lerFicheiro('src/screens/Equipamentos.jsx')).toMatch(/categoriasDaCasa\(s\.equipCats\)/);
-    expect(lerFicheiro('src/sheets/FichaEquipamento.jsx')).toMatch(/categoriasDaCasa\(daCasa\.equipCats\)/);
+    expect(lerFicheiro('src/screens/Equipamentos.jsx')).toMatch(/categoriasDaCasa\(s\.equipCats, s\.equipCatsProprias\)/);
+    expect(lerFicheiro('src/sheets/FichaEquipamento.jsx')).toMatch(/categoriasDaCasa\(daCasa\.equipCats, daCasa\.equipCatsProprias\)/);
   });
 });
 

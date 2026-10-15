@@ -306,8 +306,14 @@ describe('Uma casa sem sementes não tem o dinheiro de outra família', () => {
     expect(st.spent).toBe(0);
   });
 
-  // As categorias ficam: são um ponto de partida e mudam-se na Gestão. O que
-  // sai são os valores.
+  test('⚠ «Começar de zero» apaga os envelopes também — nem as categorias ficam', () => {
+    const st = comEstado(BLANK());
+    expect(st.envelopes).toHaveLength(0);
+  });
+
+  // Numa casa acabada de ligar as categorias ficam: são um ponto de partida e
+  // mudam-se na Gestão. O que sai são os valores. (O «Começar de zero» é
+  // outra coisa, e apaga-as — ver acima.)
   test('as categorias ficam, com os valores a zero', () => {
     const st = comEstado(SEM_DINHEIRO_SEMEADO());
     expect(st.envelopes.map(e => e.name))
