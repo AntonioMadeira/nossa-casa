@@ -297,7 +297,9 @@ export default function Perfil({ t, user, onClose, onSignOut, onSaude, onDoc, on
           paddingHorizontal: 2, paddingTop: S.md }}>
           <Icon name="lock" size={14} color={t.text3} />
           <Text style={{ flex: 1, fontFamily: FONT.ui, fontSize: 11.5, lineHeight: 18, color: t.text3 }}>
-            Guardado neste dispositivo — os dados desta casa não saem daqui.
+            {servidor.auth.valida()
+              ? 'Guardado na base de dados da casa — os mesmos dados em todos os dispositivos, incluindo a saúde.'
+              : 'Guardado neste dispositivo — os dados desta casa não saem daqui.'}
           </Text>
         </View>
       </View>

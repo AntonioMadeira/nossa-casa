@@ -118,7 +118,12 @@ local como sempre correu — a ligação é opcional, não um pré-requisito.
 `db/postgres/` é o esquema PostgreSQL anterior, guardado como referência: é onde as
 políticas estão pensadas ao pormenor.
 
-**A saúde não SINCRONIZA — mas está construída.** Esta linha dizia que `episodios_saude`
+**⚠ A saúde SINCRONIZA desde 30/09/2026** (`A_SAUDE_SOBE = true` em `src/endereco.js`, decisão
+do dono da casa: «o RGPD é preocupação minha»). Tudo o que está abaixo sobre o travão descreve o
+mecanismo, que continua lá e se inverte numa linha — mas o travão está **aberto**. Confirmado de
+novo em 15/10/2026, quando uma frase do Perfil afirmou o contrário por se ter fiado neste ficheiro.
+
+**A saúde não SINCRONIZA — mas está construída.** (histórico, até 30/09/2026) Esta linha dizia que `episodios_saude`
 e `anexos` «não existem nas coleções nem na camada de cliente», e era falso nas duas
 metades. Corrigido em 03/09/2026:
 
@@ -316,5 +321,6 @@ O protótipo foi construído com medição, não com impressão. Mantenha isso:
 - Acrescentar ecrãs, secções ou funcionalidades que não estão em `TAREFAS.md`.
 - Mudar o registo da escrita (formal, terceira pessoa) ou traduzir para outra variante.
 - Introduzir uma biblioteca de componentes visuais — o sistema é próprio e está em `theme.js`.
-- Ligar o módulo de saúde a um servidor antes de resolver a conformidade: são dados de saúde de
-  menores, categoria especial no RGPD. `docs/seguranca.html` explica.
+- Fechar o travão da saúde (`A_SAUDE_SOBE`) ou mudar quem a vê: são dados de saúde de menores,
+  categoria especial no RGPD. A decisão de a sincronizar é do dono da casa. `docs/seguranca.html`
+  explica.
