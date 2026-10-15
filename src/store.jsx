@@ -292,7 +292,7 @@ const DATA_KEYS = [
   'newEquip', 'equipGone', 'equipEdits', 'schemeByUser', 'themeByUser', 'notif',
   'rotate', 'urg', 'due', 'monthName', 'monthLimits', 'monthZero', 'clearedSeeds',
   'eventGone', 'eventEdits', 'roles', 'pins', 'pontosLigados', 'ementaDesligada', 'iconesDesligados', 'pointValue', 'payDay', 'splitHalf',
-  'rendimento', 'orcamento', 'stores', 'shopPlan', 'shopHistory', 'precos', 'precoPago', 'health', 'specialities', 'equipCats', 'equipCatsProprias', 'registo',
+  'rendimento', 'orcamento', 'zeradoEm', 'stores', 'shopPlan', 'shopHistory', 'precos', 'precoPago', 'health', 'specialities', 'equipCats', 'equipCatsProprias', 'registo',
   'recurringReset', 'healthNotes', 'healthRecipes', 'healthDecisions', 'healthDocs', 'healthGone',
   'healthArchived', 'healthTomas', 'healthAlergias',
   'googleCalendarImported', // Google Calendar imports
@@ -722,6 +722,8 @@ export const DEMO = () => ({
   pointValue: 0.10, payDay: 0, splitHalf: true,
   rendimento: 3200,              // o que entra por mês; os envelopes saem daqui
   // Por mês (como sempre) ou para o ano todo — ver `src/orcamento.js`.
+  // O carimbo do último «Começar de Zero» que este aparelho viu (ver `lerDoServidor`).
+  zeradoEm: null,
   orcamento: ORCAMENTO_BASE(),
   stores: ['Continente de Belém', 'Pingo Doce da Ajuda', 'Mercado de Alcântara'],
   shopPlan: {
@@ -957,10 +959,21 @@ export function StoreProvider({ children }) {
       // garantia do frigorífico dessa família (casa simulada, 13/09/2026).
       // Mudou a casa: o estado volta a `BLANK()` ANTES de ler, e só ficam as
       // preferências de aspeto, que são de quem olha e não da casa.
-      set(x => (x.casaDoServidor && casa.casaId && x.casaDoServidor !== casa.casaId
-        ? { ...BLANK(), schemeByUser: x.schemeByUser, themeByUser: x.themeByUser, notif: x.notif,
-            casaDoServidor: casa.casaId }
-        : { casaDoServidor: casa.casaId || x.casaDoServidor }));
+      //
+      // ⚠ E o mesmo quando a casa foi ZERADA noutro aparelho. O «Começar de
+      // Zero» apaga o servidor e a cópia de quem carrega no botão — e a cópia
+      // dos OUTROS telemóveis ficava: mostravam o que o browser tinha apagado,
+      // e o que lá estava podia voltar a subir. O hook deixa um carimbo
+      // (`zerado_em`); um aparelho que não o viu apaga a sua cópia, uma vez.
+      set(x => {
+        const outraCasa = x.casaDoServidor && casa.casaId && x.casaDoServidor !== casa.casaId;
+        const foiZerada = !!casa.zeradoEm && casa.zeradoEm !== x.zeradoEm;
+        if (outraCasa || foiZerada) {
+          return { ...BLANK(), schemeByUser: x.schemeByUser, themeByUser: x.themeByUser, notif: x.notif,
+            casaDoServidor: casa.casaId, zeradoEm: casa.zeradoEm || null };
+        }
+        return { casaDoServidor: casa.casaId || x.casaDoServidor };
+      });
       mapaServidor.current = {
         casa: casa.casaId,
         membros: Object.fromEntries((casa._servidor.membros || []).map(m => [m.nome, m.id])),
@@ -6239,7 +6252,14 @@ function build(s, set, mapaServidor = { current: { casa: null, membros: {}, enve
     lerDoServidor, seguirCompras,
     dueOf: (t) => (t.dueKey ? dueInfo(t.dueKey, t.dueTime) : null),
     resetDemo: () => { AsyncStorage.removeItem(KEY).catch(() => {}); set(DEMO()); },
-    startBlank: () => set(BLANK()),
+    // «Começar de Zero» neste aparelho: o estado volta a estar vazio, e a cópia de
+    // segurança da migração — que guarda a casa ANTIGA inteira — sai também.
+    // `zeradoEm` é o carimbo que o servidor devolveu, para este aparelho não se
+    // apagar uma segunda vez quando ler a casa.
+    startBlank: (zeradoEm = null) => {
+      Promise.resolve(AsyncStorage.removeItem(BACKUP)).catch(() => {});
+      set({ ...BLANK(), zeradoEm });
+    },
     // Health feature methods
     addHealthRecord, addHealthNote, editarNotaSaude, apagarNotaSaude, notaDaConsulta,
     addRecipe, setRecipeDecision, setHealthDecision,

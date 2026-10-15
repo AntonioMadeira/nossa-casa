@@ -202,6 +202,6 @@ describe('os dois botões do Perfil já não apagam ao toque', () => {
     // servidor recusar, a casa local fica intacta e a folha diz porquê.
     // Limpar aqui e falhar lá deixava as duas metades a discordar.
     const bloco = perfil.slice(perfil.indexOf('zero: {'), perfil.indexOf('zero: {') + 900);
-    expect(bloco.indexOf('limparCasaNoServidor')).toBeLessThan(bloco.indexOf('startBlank()'));
+    expect(bloco.indexOf('limparCasaNoServidor')).toBeLessThan(bloco.indexOf('startBlank('));
   });
 });

@@ -955,6 +955,8 @@ export async function puxarCasa() {
     membros: membrosDoServidor(casa.membros),
     nomeDaCasa: aCasa ? aCasa.nome : null,
     casaId: aCasa ? aCasa.id : null,
+    // O carimbo do último «Começar de Zero»; vazio em casas que nunca o usaram.
+    zeradoEm: (aCasa && aCasa.zerado_em) || null,
     _servidor: casa,
   };
 }

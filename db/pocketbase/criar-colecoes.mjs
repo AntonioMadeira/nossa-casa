@@ -316,6 +316,10 @@ const CAMPOS_DA_CASA = [
     // lê-se como mensal — é o que a casa sempre fez. Nasce também na tabela
     // `CAMPOS` do `acrescentar-campos.mjs`.
     json('orcamento'),
+    // O carimbo do último «Começar de Zero» (escrito pelo hook `limpar-casa`).
+    // Cada aparelho compara-o com o que viu e apaga a cópia local se é novo.
+    // Nasce também na tabela `CAMPOS` do `acrescentar-campos.mjs`.
+    txt('zerado_em', { max: 40 }),
     // §4: o valor do ponto é validado no SERVIDOR, não só no campo.
     //
     // ⚠ Mínimo 0, e não 0,01. Os pontos passaram a ser opcionais em

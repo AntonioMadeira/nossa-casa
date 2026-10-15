@@ -113,8 +113,8 @@ export default function Perfil({ t, user, onClose, onSignOut, onSaude, onDoc, on
       // deixava as duas metades a discordar, e a seguinte leitura do servidor
       // trazia tudo de volta sem ninguém perceber.
       fazer: async () => {
-        if (servidor.estaLigado()) await servidor.auth.limparCasaNoServidor();
-        startBlank();
+        const apagada = servidor.estaLigado() ? await servidor.auth.limparCasaNoServidor() : null;
+        startBlank((apagada && apagada.zerado_em) || null);
       },
     },
   };

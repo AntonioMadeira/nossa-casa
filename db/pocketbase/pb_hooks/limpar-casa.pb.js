@@ -91,10 +91,24 @@ routerAdd('POST', '/api/casa/limpar', (e) => {
     if (n) { apagadas[nome] = n; total += n; }
   }
 
+  // O CARIMBO do «Começar de Zero». Os outros aparelhos da casa guardam uma
+  // cópia local, e sem isto a cópia deles sobrevivia ao botão: o telemóvel
+  // continuava a mostrar o que o browser tinha apagado. Cada aparelho compara
+  // este carimbo com o que viu da última vez, e se é novo apaga a sua cópia.
+  // Texto e não `date`: só se compara com igualdade, e o texto vai e volta sem
+  // ninguém o reformatar.
+  let zeradoEm = '';
+  try {
+    const linhaDaCasa = $app.findRecordById('casas', casa);
+    zeradoEm = new Date().toISOString();
+    linhaDaCasa.set('zerado_em', zeradoEm);
+    $app.save(linhaDaCasa);
+  } catch (err) { zeradoEm = ''; }   // servidor sem o campo: apaga na mesma, sem carimbo
+
   // Diz o que fez, coleção a coleção. Uma operação destas não deve responder
   // «pronto»: quem a pediu tem de poder ver que o que saiu foi o que esperava.
   $app.logger().info('Dados da casa apagados',
     'casa', casa, 'por', membro.get('nome'), 'linhas', total);
 
-  return e.json(200, { casa, total, apagadas });
+  return e.json(200, { casa, total, apagadas, zerado_em: zeradoEm });
 }, $apis.requireAuth('membros'));

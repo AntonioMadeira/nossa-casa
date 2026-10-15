@@ -99,6 +99,7 @@ export const O_QUE_SOBE = {
   pointValue: ['campo', 'O `valor_ponto` da casa. Os dois telefones pagavam semanadas de valores diferentes.'],
   payDay: ['campo', 'O `dia_pagamento` da casa: em que dia da semana a semanada se paga.'],
   splitHalf: ['campo', 'O `divide_meias` da casa: se cada despesa partilhada se divide a meias.'],
+  zeradoEm: ['campo', 'O `zerado_em` da casa: o carimbo do último «Começar de Zero». Escreve-o o hook `limpar-casa`; cada aparelho compara-o com o que viu e apaga a sua cópia local quando é novo.'],
   orcamento: ['campo', 'O campo `orcamento` da casa, em JSON: o modo (mensal ou anual), o ano, o rendimento do ano e a sua distribuição pelos meses.'],
   rendimento: ['campo', 'O `rendimento_mensal` da casa, contra o qual os limites dos envelopes se medem.'],
   nomeDaCasa: ['campo', 'O `nome` da casa, que aparece no cabeçalho e no ecrã de entrada.'],

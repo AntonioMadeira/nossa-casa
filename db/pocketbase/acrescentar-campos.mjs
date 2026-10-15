@@ -99,6 +99,8 @@ const CAMPOS = [
   // O orçamento por mês ou para o ano (15/10/2026): `{ modo, ano, total, meses }`.
   // Ausente lê-se como mensal. Ver o comentário no `criar-colecoes.mjs`.
   ['casas', 'orcamento', { type: 'json', maxSize: 20000 }],
+  // O carimbo do último «Começar de Zero»: apaga a cópia local dos outros aparelhos.
+  ['casas', 'zerado_em', { type: 'text', max: 40 }],
 ];
 
 // As coleções que nasceram depois da base. A definição é a MESMA do
