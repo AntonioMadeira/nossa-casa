@@ -21,6 +21,10 @@ const APP_JSON = 'app.json';
 const SAIDA = 'dist';
 const original = readFileSync(APP_JSON, 'utf8');
 
+if (process.env.EXPO_PUBLIC_OAUTH_PROVIDER && process.env.EXPO_PUBLIC_OAUTH_PROVIDER !== 'google') {
+  throw new Error(`EXPO_PUBLIC_OAUTH_PROVIDER=${process.env.EXPO_PUBLIC_OAUTH_PROVIDER} é só para desenvolvimento; não se publica.`);
+}
+
 const restaurar = () => writeFileSync(APP_JSON, original);
 process.on('SIGINT', () => { restaurar(); process.exit(130); });
 
@@ -33,8 +37,11 @@ try {
   }
   writeFileSync(APP_JSON, JSON.stringify(app, null, 2));
 
+  // ⚠ `--clear`: o Metro guarda em cache o código já transformado, e o valor de
+  // EXPO_PUBLIC_PB_URL fica dentro dele — sem limpar, um build com outro URL (ou
+  // sem nenhum) saía a apontar ao servidor do build anterior.
   if (existsSync(SAIDA)) rmSync(SAIDA, { recursive: true, force: true });
-  const r = spawnSync('npx', ['expo', 'export', '--platform', 'web', '--output-dir', SAIDA], {
+  const r = spawnSync('npx', ['expo', 'export', '--clear', '--platform', 'web', '--output-dir', SAIDA], {
     stdio: 'inherit',
     shell: true,
     env: { ...process.env, EXPO_PUBLIC_PB_URL: process.env.EXPO_PUBLIC_PB_URL || 'https://casa.anossacasa.app' },
