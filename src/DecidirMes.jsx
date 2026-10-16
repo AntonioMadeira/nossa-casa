@@ -29,7 +29,7 @@ export default function DecidirMes({ t, title, message, rotuloAjustar, rotuloTot
         <View style={{ width: '100%', maxWidth: 360, backgroundColor: t.surface,
           borderRadius: R.card, padding: S.xl, gap: S.lg, ...elev(3) }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Icon name="calendar" size={24} color={t.accent} />
+            <Icon name="calendar" size={24} color={t.titulo} />
             <Text style={{ flex: 1, fontFamily: FONT.display, fontSize: 18, fontWeight: '500', color: t.text1 }}>{title}</Text>
           </View>
           <Text style={{ fontFamily: FONT.body, fontSize: 15, lineHeight: 22, color: t.text2 }}>{message}</Text>
