@@ -8,6 +8,7 @@ import { Card, SectionTitle, Linha, Label, Primary, AddButton, Row, Tap, Avatar,
 import Icon from '../Icon';
 import Sheet from '../Sheet';
 import Confirm from '../Confirm';
+import DecidirMes from '../DecidirMes';
 
 // Com que limite nasce um envelope novo. Estava escrito no meio da chamada, sem
 // nome e sem aparecer em sítio nenhum da folha; agora tem nome e o botão diz-lhe
@@ -86,6 +87,9 @@ export default function Gestao({ t, user, onClose }) {
   // Os doze meses a meio de uma edição, ou `null` quando a folha está fechada.
   const [mesesRascunho, setMesesRascunho] = useState(null);
   const [mesEmFoco, setMesEmFoco] = useState(null);
+  // O total do ano DENTRO da folha dos meses, e o mês que mudou à espera de decisão.
+  const [totalRascunho, setTotalRascunho] = useState(null);
+  const [mesPendente, setMesPendente] = useState(null);
   const [selectedMember, setSelectedMember] = useState(null);
   const [selectedEnvelope, setSelectedEnvelope] = useState(null);
   // O formulário do membro, e a recusa que vier do servidor. O erro é estado
@@ -167,9 +171,28 @@ export default function Gestao({ t, user, onClose }) {
   const ignorar = () => undefined;
   // `mes` é o mês cujo campo recebe o foco ao abrir (toque numa barra); sem ele
   // abre-se a folha sem foco nenhum.
-  const abrirMeses = (mes = null) => { setMesEmFoco(mes); setMesesRascunho(valoresDosMeses.slice()); };
-  const fecharMeses = () => { setMesesRascunho(null); setMesEmFoco(null); };
-  const mexerNoMes = (i, v) => setMesesRascunho(m => ajustarMes(m, i, v, orcamento.total));
+  const abrirMeses = (mes = null) => {
+    setMesEmFoco(mes); setTotalRascunho(orcamento.total); setMesesRascunho(valoresDosMeses.slice());
+  };
+  const fecharMeses = () => { setMesesRascunho(null); setMesEmFoco(null); setTotalRascunho(null); setMesPendente(null); };
+  // Um mês que muda de valor pergunta o que fazer com a diferença: tirá-la (ou
+  // dá-la) aos outros meses, ou deixá-los como estão e mudar o total do ano.
+  const mexerNoMes = (i, v) => {
+    if (Math.round(v * 100) === Math.round(mesesRascunho[i] * 100)) return;
+    setMesPendente({ i, v });
+  };
+  const ajustarOsOutros = () => {
+    const { i, v } = mesPendente;
+    setMesesRascunho(m => ajustarMes(m, i, v, totalRascunho));
+    setMesPendente(null);
+  };
+  const mudarOTotal = () => {
+    const { i, v } = mesPendente;
+    const novos = mesesRascunho.map((x, k) => (k === i ? v : x));
+    setMesesRascunho(novos);
+    setTotalRascunho(somaDosMeses(novos));
+    setMesPendente(null);
+  };
 
   const renderBudgetTab = () => (
     <View style={{ gap: S.lg }}>
@@ -991,24 +1014,42 @@ export default function Gestao({ t, user, onClose }) {
       )}
 
       {mesesRascunho ? (
-        <Sheet t={t} title="Ajustar os Meses" sub={`Orçamento de ${anoDoOrcamento} · ${EUR(orcamento.total)}`}
+        <Sheet t={t} title="Ajustar os Meses" sub={`Orçamento de ${anoDoOrcamento} · ${EUR(totalRascunho ?? orcamento.total)}`}
           onClose={fecharMeses}
           action={<Primary t={t} comum label="Guardar distribuição"
-            onPress={() => { definirOrcamento({ meses: mesesRascunho }); fecharMeses(); }} />}>
+            onPress={() => { definirOrcamento({ total: totalRascunho ?? orcamento.total, meses: mesesRascunho }); fecharMeses(); }} />}>
           <View style={{ gap: S.md }}>
             <Text style={{ fontFamily: FONT.ui, fontSize: 11.5, lineHeight: 18, color: t.text3 }}>
-              O que se mexe num mês sai dos restantes, para o total do ano não mudar.
-              {' '}Distribuído: {EUR(somaDosMeses(mesesRascunho))} de {EUR(orcamento.total)}.
+              Ao mudar um mês, escolhe-se se a diferença sai dos restantes ou se muda o total do ano.
+              {' '}Distribuído: {EUR(somaDosMeses(mesesRascunho))} de {EUR(totalRascunho ?? orcamento.total)}.
             </Text>
             {MONTHS.map((nome, i) => (
               <View key={nome}>
                 <Label t={t}>{nome}</Label>
-                <NumField t={t} value={mesesRascunho[i]} step={50} min={0} max={Math.max(orcamento.total, 1)}
+                <NumField t={t} value={mesesRascunho[i]} step={50} min={0} max={9999999}
                   rotulo={`${nome}, em euros`} focar={mesEmFoco === i}
                   onChange={ignorar} aoTerminar={(v) => mexerNoMes(i, v)} />
               </View>
             ))}
           </View>
+          {mesPendente ? (() => {
+            const { i, v } = mesPendente;
+            const total = totalRascunho ?? orcamento.total;
+            const novoTotal = somaDosMeses(mesesRascunho.map((x, k) => (k === i ? v : x)));
+            const cabe = Math.round(v * 100) <= Math.round(total * 100);
+            return (
+              <DecidirMes t={t}
+                title={`${MONTHS[i]} passa a ${EUR(v)}`}
+                message={cabe
+                  ? `Quer que a diferença saia dos outros meses, e o ano continue em ${EUR(total)}, ou que o ano passe a ${EUR(novoTotal)}?`
+                  : `Este mês é maior do que o ano todo (${EUR(total)}). O ano passa a ${EUR(novoTotal)}.`}
+                rotuloAjustar="Ajustar os outros meses"
+                rotuloTotal={`Mudar o total para ${EUR(novoTotal)}`}
+                aoAjustar={cabe ? ajustarOsOutros : null}
+                aoMudarTotal={mudarOTotal}
+                aoCancelar={() => setMesPendente(null)} />
+            );
+          })() : null}
         </Sheet>
       ) : null}
 

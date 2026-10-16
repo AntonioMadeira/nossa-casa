@@ -4217,7 +4217,11 @@ function build(s, set, mapaServidor = { current: { casa: null, membros: {}, enve
       campos = { ...campos, ...doAnualParaMensal(atual, mes) };
     }
     const base = campos.orcamento || atual;
-    if (base.modo === 'anual' && total !== undefined) {
+    if (base.modo === 'anual' && total !== undefined && Array.isArray(meses)) {
+      // Os dois de uma vez: o ano muda de total E fica com esta distribuição
+      // (um mês alterado à mão, sem tirar aos outros).
+      campos.orcamento = { ...base, total: Math.max(0, Number(total) || 0), meses: meses.map(Number) };
+    } else if (base.modo === 'anual' && total !== undefined) {
       campos.orcamento = { ...base, total: Math.max(0, Number(total) || 0), meses: null };
     } else if (base.modo === 'anual' && Array.isArray(meses)) {
       campos.orcamento = { ...base, meses: meses.map(Number) };
