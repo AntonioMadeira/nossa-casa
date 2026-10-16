@@ -21,11 +21,12 @@ import { useStore } from '../store';
 import * as sync from '../sync';
 import * as servidor from '../pocketbase';
 import { Pill } from '../ui';
+import CriarCasa from '../CriarCasa';
 
 export default function Login({ t, onEnter, erroInicial = null }) {
   const { s, entrarCrianca, temPin, membros: MEMBERS, nomeDaCasa, criancas, adultos } = useStore();
   const insets = useSafeAreaInsets();
-  const [step, setStep] = useState(erroInicial ? 'contas' : 'login');   // login | contas | criancas | pin
+  const [step, setStep] = useState(erroInicial ? 'contas' : 'login');   // login | criar | contas | criancas | pin
   const [kid, setKid] = useState(null);
   const [pin, setPin] = useState('');
   const [tries, setTries] = useState(0);
@@ -90,8 +91,14 @@ export default function Login({ t, onEnter, erroInicial = null }) {
   //
   // Os scopes da agenda pedem-se AQUI: o token traz as permissões dadas no
   // consentimento, não as que se queiram mais tarde.
-  const entrarComGoogle = async () => {
-    if (!sync.ligado()) return setStep('contas');
+  // O argumento é o rascunho de «Criar a minha casa»; o `onPress` do botão da
+  // Google passa-lhe o evento, que não é um rascunho, e então é a entrada normal.
+  const entrarComGoogle = async (arg) => {
+    const novaCasa = arg && arg.nomeCasa ? arg : null;
+    if (!sync.ligado()) {
+      if (novaCasa) return setErroGoogle('Criar uma casa precisa de um servidor, e esta app está a correr sem ele.');
+      return setStep('contas');
+    }
     setErroGoogle(null);
     setDetalheDoErro(null);
     // ── UM CLIQUE TEM SEMPRE UMA CONSEQUÊNCIA ──────────────────────────
@@ -144,6 +151,7 @@ export default function Login({ t, onEnter, erroInicial = null }) {
       // ⚠ O relógio NÃO se pára aqui quando isto devolve `true`: a página
       // está a navegar para a Google e vai desaparecer com ele. Se a
       // navegação falhar por alguma razão, o relógio dispara e diz.
+      servidor.auth.prepararNovaCasa(novaCasa);
       if (await servidor.auth.comecarEntradaGoogle()) return;
       const r = await servidor.auth.entrarComGoogle();
       pararOSilencio();
@@ -204,9 +212,17 @@ export default function Login({ t, onEnter, erroInicial = null }) {
           : 'A Google autorizou, mas o servidor não conseguiu concluir a entrada. '
             + 'A abrir as contas desta casa.');
       setDetalheDoErro(cru);
-      setStep('contas');
+      // Quem estava a criar uma casa fica no formulário, com a razão: mandá-la
+      // para a lista de contas era mandá-la para uma casa que não é a dela.
+      if (novaCasa) {
+        setErroGoogle((m) => String(m).replace(' A abrir as contas desta casa.', ''));
+        setStep('criar');
+      } else {
+        setStep('contas');
+      }
     }
   };
+  const criarCasa = (rascunho) => entrarComGoogle(rascunho);
 
   const press = (k) => {
     if (k === '←') return setPin(p => p.slice(0, -1));
@@ -314,6 +330,13 @@ export default function Login({ t, onEnter, erroInicial = null }) {
               Ao continuar, a Nossa Casa recebe o seu nome e endereço de e-mail. Nenhum dado bancário é partilhado com a Google.
             </Text>
             <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.2)' }} />
+            <Pressable onPress={() => { setErroGoogle(null); setDetalheDoErro(null); setStep('criar'); }}
+              accessibilityRole="button" accessibilityLabel="Criar a minha casa"
+              style={{ minHeight: 48, borderRadius: R.row, borderWidth: 1, borderColor: 'rgba(255,255,255,0.45)',
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+              <Icon name="home" size={20} color="#FFFFFF" />
+              <Text style={{ fontFamily: FONT.display, fontSize: 15, fontWeight: '500', color: '#FFFFFF', letterSpacing: 0.4 }}>Criar a minha casa</Text>
+            </Pressable>
             <Pressable onPress={() => setStep('criancas')} accessibilityRole="button" accessibilityLabel="Entrar como criança"
               style={{ minHeight: 48, borderRadius: R.row, borderWidth: 1, borderColor: 'rgba(255,255,255,0.45)',
                 flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
@@ -327,9 +350,12 @@ export default function Login({ t, onEnter, erroInicial = null }) {
               seguir — sem ela o ecrã é uma porta fechada sem indicação. */}
           <Text style={{ fontFamily: FONT.ui, fontSize: 12, lineHeight: 19,
             color: 'rgba(255,255,255,0.62)', paddingHorizontal: 4 }}>
-            Ainda não faz parte desta casa? Peça o convite ao administrador da família.
+            Ainda não faz parte de uma casa? Peça o convite ao administrador da família, ou crie a sua.
           </Text>
           </>
+        ) : step === 'criar' ? (
+          <CriarCasa glass={glass} onVoltar={() => { setErroGoogle(null); setDetalheDoErro(null); setStep('login'); }}
+            onCriar={criarCasa} ocupado={aAbrirGoogle} erro={erroGoogle} />
         ) : step === 'contas' ? (
           <View style={glass}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -412,8 +438,8 @@ export default function Login({ t, onEnter, erroInicial = null }) {
                 quem o pode resolver. */}
             <Text style={{ fontFamily: FONT.body, fontSize: 15, lineHeight: 22, color: 'rgba(255,255,255,0.8)' }}>
               {criancas.length
-                ? 'Escolha o seu nome e introduza o PIN de 4 dígitos.'
-                : 'Um adulto acrescenta-as em Gestão da Casa, e dá a cada uma o seu PIN de 4 dígitos.'}
+                ? 'Escolha o seu nome e introduza o PIN de 6 dígitos.'
+                : 'Um adulto acrescenta-as em Gestão da Casa, e dá a cada uma o seu PIN de 6 dígitos.'}
             </Text>
             {criancas.map(n => {
               const hasPin = temPin(n);
@@ -454,7 +480,7 @@ export default function Login({ t, onEnter, erroInicial = null }) {
               </View>
               <View style={{ gap: 2 }}>
                 <Text style={{ fontFamily: FONT.display, fontSize: 20, fontWeight: '500', color: '#FFFFFF' }}>Olá, {kid}</Text>
-                <Text style={{ fontFamily: FONT.ui, fontSize: 12.5, color: 'rgba(255,255,255,0.7)' }}>PIN de 4 dígitos</Text>
+                <Text style={{ fontFamily: FONT.ui, fontSize: 12.5, color: 'rgba(255,255,255,0.7)' }}>PIN de 6 dígitos</Text>
               </View>
             </View>
             <View style={{ flexDirection: 'row', gap: 14, justifyContent: 'center' }}>

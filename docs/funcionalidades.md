@@ -204,6 +204,14 @@ entrada, ou a app se havia sessão.
 **Continuar com Google** → seletor de contas (Rita administradora, Tomás adulto, e *Usar outra
 conta*). **Entrar como Criança** → seletor de perfis → PIN.
 
+**Criar a minha casa** (ecrã de entrada, com servidor): quatro passos antes da Google — nome da
+casa, nome de quem a cria, crianças (só nomes) e outros adultos (nome e e-mail), estes dois últimos
+opcionais. Só depois se vai à Google: o **servidor** cria a casa e faz da pessoa administradora
+(`casa-criar.pb.js`); se desistir na Google, não nasce nada. Já com a casa criada, a app acrescenta as
+crianças (com um PIN de 6 dígitos gerado, mostrado uma vez) e os adultos. `CASAS_PERMITIDAS` limita quem
+pode criar casas. Quem não existe e não pediu para criar uma casa é recusado, em vez de ganhar uma.
+Provas: `provar-criar-casa.mjs` (servidor) e `criar-casa.test.js` (cliente).
+
 Escolher um adulto: se não há dados guardados, abre o **arranque de casa nova** (nome da casa,
 rendimento, convite ao segundo adulto, perfis das crianças). Se há, entra e mostra o **popup do
 Calendar** se houver sugestão não tratada para esse membro.
@@ -325,7 +333,7 @@ garantias, com a linha a abrir a ficha desse contrato. O cabeçalho conta os con
 
 ## 3.12 Modo criança
 
-PIN de 4 dígitos, sem valor de fábrica, com limite de tentativas e bloqueio. Três entradas:
+PIN de 6 dígitos (os de 4 já existentes continuam a entrar), sem valor de fábrica, com limite de tentativas e bloqueio. Três entradas:
 **Tarefas** (alvos maiores, marca como *a confirmar*), **Compras** (a lista da casa corredor a
 corredor, sem preços, e *Pedir um artigo* — 11/09/2026) e **O Meu Cofre** (saldo, movimentos,
 o **objetivo** — «Bicicleta, 120 €», escolhido pela criança, com a barra a encher e as semanadas que

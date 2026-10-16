@@ -44,6 +44,20 @@ import { eColecaoDeSaude } from './colecoes-de-saude.js';
 let guarda = AsyncStorage;
 let URL = process.env.EXPO_PUBLIC_PB_URL;
 
+// O fornecedor da entrada. É a Google. Só se muda (EXPO_PUBLIC_OAUTH_PROVIDER)
+// para desenvolver e mostrar a entrada SEM credenciais da Google, contra o
+// fornecedor falso de `scripts/oidc-falso.mjs` ligado ao PocketBase como `oidc`.
+const PROVEDOR = process.env.EXPO_PUBLIC_OAUTH_PROVIDER || 'google';
+
+// O que a pessoa preencheu em «Criar a minha casa» e ainda falta aplicar: as
+// crianças e os outros adultos só se podem acrescentar DEPOIS de a casa existir
+// e de ela ser administradora, ou seja, depois do login. Vive em memória, uma
+// só vez (`tomarRascunho`), e não leva segredo nenhum — os PIN geram-se depois.
+let rascunhoDaCasa = null;
+// O pedido de «criar casa» em curso: posto por `prepararNovaCasa` antes de ir à
+// Google, lido pelo caminho que conclui a entrada. `null` é a entrada normal.
+let novaCasaPedida = null;
+
 export const configurar = (opts = {}) => {
   if (opts.storage) guarda = opts.storage;
   if (opts.url !== undefined) URL = opts.url;
@@ -320,6 +334,11 @@ const tokenDaAgenda = async () => {
 
 // ─── Sessão ──────────────────────────────────────────────────────────────────
 
+// O que o servidor precisa para criar a casa: que se pediu, o nome dela, e o
+// nome de quem a cria. A casa e o papel de administrador NÃO vão daqui — quem
+// os decide é o gancho do servidor.
+const dadosDaNovaCasa = (n) => ({ nova_casa: true, nome_casa: n.nomeCasa, nome: n.nome });
+
 export const auth = {
   // Os adultos entram por e-mail.
   entrarAdulto: (email, password) => (estaLigado()
@@ -374,7 +393,7 @@ export const auth = {
     if (!retorno) return false;
 
     const m = await pb.collection('membros').listAuthMethods();
-    const g = (m.oauth2?.providers || []).find(p => p.name === 'google');
+    const g = (m.oauth2?.providers || []).find(p => p.name === PROVEDOR);
     if (!g) throw new Error('A entrada pela Google não está configurada neste servidor.');
 
     // ⚠ O `redirect_uri` é O DESTA APP, e tem de estar registado na consola da
@@ -415,6 +434,9 @@ export const auth = {
       // troca do código tem de repetir o mesmo, senão a Google recusa-a.
       window.sessionStorage.setItem(CHAVE_DO_RETORNO, JSON.stringify({
         codeVerifier: g.codeVerifier, state: g.state, retorno,
+        // «Criar a minha casa»: o que a pessoa escreveu antes de ir à Google.
+        // Só nomes — nenhum segredo atravessa a ida e volta.
+        novaCasa: novaCasaPedida,
       }));
     } catch (e) {
       throw new Error('O navegador não deixa guardar a entrada. Saia do modo privado e tente outra vez.');
@@ -425,6 +447,20 @@ export const auth = {
   },
 
   // A Google devolveu-nos alguma coisa? Lê-se o endereço, e mais nada.
+  // O rascunho de «Criar a minha casa», uma só vez: quem o pede leva-o e ele
+  // deixa de existir. Existe depois de uma entrada que criou a casa.
+  // «Criar a minha casa» põe aqui o que a pessoa preencheu ANTES de ir à Google
+  // (ou `null`, para uma entrada normal). É lido pelos dois caminhos de entrada.
+  prepararNovaCasa(rascunho) {
+    novaCasaPedida = rascunho && rascunho.nomeCasa ? rascunho : null;
+  },
+
+  tomarRascunho() {
+    const r = rascunhoDaCasa;
+    rascunhoDaCasa = null;
+    return r;
+  },
+
   haRetornoDaGoogle() {
     if (typeof window === 'undefined' || !window.location) return false;
     const q = new URLSearchParams(window.location.search);
@@ -476,10 +512,15 @@ export const auth = {
     }
 
     try {
+      const novaCasa = guardado.novaCasa || null;
       const r = await pb.collection('membros').authWithOAuth2Code(
-        'google', code, guardado.codeVerifier, guardado.retorno,
+        PROVEDOR, code, guardado.codeVerifier, guardado.retorno,
+        // O servidor é que cria a casa e o administrador (`casa-criar.pb.js`);
+        // aqui só se diz que foi isso que a pessoa pediu, e como se chama.
+        novaCasa ? dadosDaNovaCasa(novaCasa) : undefined,
       );
       limpar();
+      if (novaCasa) rascunhoDaCasa = novaCasa;
       agendaLigada = null;
       erroDaFotografia = null;
       // A fotografia da conta, como no outro caminho: falhar aqui não estraga
@@ -531,7 +572,8 @@ export const auth = {
     const janela = abrirNoGesto('nossa-casa-google');
     try {
       const r = await pb.collection('membros').authWithOAuth2({
-      provider: 'google',
+      provider: PROVEDOR,
+      ...(novaCasaPedida ? { createData: dadosDaNovaCasa(novaCasaPedida) } : {}),
       ...(janela ? { urlCallback: (url) => { janela.location.href = url; } } : {}),
       scopes: calendario
         // `calendar.events` e não `calendar.readonly`: a app passou a criar
@@ -580,6 +622,7 @@ export const auth = {
         if (typeof console !== 'undefined') console.warn('[avatar]', erroDaFotografia);
       }
     }
+      if (novaCasaPedida) rascunhoDaCasa = novaCasaPedida;
       return r;
     } catch (e) {
       // A janela em branco não pode ficar pendurada por cima da app quando a
@@ -613,7 +656,9 @@ export const auth = {
       return {
         alcancavel: true,
         semServidor: false,
-        lista: (m.oauth2?.providers || []).map(p => p.name),
+        // O fornecedor de desenvolvimento (`oidc`) faz de Google para o ecrã de
+        // entrada, que só conhece «google».
+        lista: (m.oauth2?.providers || []).map(p => (p.name === PROVEDOR ? 'google' : p.name)),
       };
     } catch {
       return { alcancavel: false, semServidor: false, lista: [] };

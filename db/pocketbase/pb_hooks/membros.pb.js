@@ -1,7 +1,7 @@
 /// <reference path="../pb_data/types.d.ts" />
 
 // A coleção `membros` aceita palavras-passe de 4 caracteres, porque o PIN de
-// uma criança tem quatro dígitos. Sem mais nada, isso deixaria um adulto
+// uma criança tem seis dígitos (e algumas, antigas, quatro). Sem mais nada, isso deixaria um adulto
 // proteger a casa inteira com «1234». As regras que faltam vivem aqui, porque
 // as regras de API do PocketBase não olham para o valor da palavra-passe.
 //

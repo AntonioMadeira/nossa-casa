@@ -7,7 +7,7 @@ import { Inter_400Regular, Inter_600SemiBold } from '@expo-google-fonts/inter';
 import { StoreProvider, useStore } from './src/store';
 import { buildTheme, onChrome, chromeLine, S, R, FONT, elev, LARGURA_APP } from './src/theme';
 import Icon, { Marca } from './src/Icon';
-import { AvatarDeCabecalho, Tap, MarcaDeAgua } from './src/ui';
+import { AvatarDeCabecalho, Tap, MarcaDeAgua, Primary } from './src/ui';
 import { AcaoDoEcra } from './src/AcaoDoEcra';
 import { FEM, DE } from './src/data';
 import { EUR, dayLabel, TODAY, TODAY_KEY, atualizarHoje, semanaDeHoje, plural,
@@ -29,6 +29,8 @@ import Perfil from './src/screens/Perfil';
 import KidApp from './src/KidApp';
 import GoogleCalendarImportModal from './src/modals/GoogleCalendarImportModal';
 import Confirm from './src/Confirm';
+import Sheet from './src/Sheet';
+import { membrosDoRascunho } from './src/criar-casa';
 import { APP_VERSION, AREAS, REGISTO_APP } from './src/registo-app';
 import * as servidor from './src/pocketbase';
 import Resultados from './src/screens/Resultados';
@@ -103,10 +105,13 @@ const TABS = [
 function Shell() {
   const { s, set, importGoogleEvents, idsGoogleDaCasa, remaining, allEvents, allTasks, allItems,
           canSeeHealth, healthOf, docsOf, allEquip, contratosDaCasa, contasDoMes, membros: MEMBERS, nomeDaCasa,
-          lerDoServidor, removerEvento, eventosQueSairamDaGoogle, isAdmin } = useStore();
+          lerDoServidor, removerEvento, eventosQueSairamDaGoogle, isAdmin, acrescentarMembro } = useStore();
   const sysDark = useColorScheme() === 'dark';
   const [user, setUser] = useState(null);      // nome do membro ligado
   const [tab, setTab] = useState('inicio');
+  // Uma casa acabada de criar: o que se acrescentou, e os PIN que as crianças
+  // receberam — mostram-se UMA vez, porque o servidor só guarda o resumo.
+  const [boasVindas, setBoasVindas] = useState(null);
   // A pesquisa global (13/09/2026, opção A de design/pesquisa-global.dc.html):
   // `null` é «fechada»; uma string é o que está escrito no campo do cabeçalho
   // do Início, mesmo vazia. Enquanto estiver aberta, o conteúdo do Início são os
@@ -255,6 +260,31 @@ function Shell() {
     })();
     return () => { vivo = false; };
   }, []);
+
+  // ── Uma casa acabada de criar ─────────────────────────────────────────────
+  //
+  // «Criar a minha casa» pergunta tudo ANTES da Google e não cria nada até à
+  // volta: o servidor cria a casa e faz da pessoa administradora quando ela
+  // entra. Só aí é que se podem acrescentar as crianças e os outros adultos que
+  // ela escreveu — porque só uma administradora os acrescenta. Corre uma vez
+  // (`tomarRascunho` esvazia-se) e depois de `user` estar posto, para a loja
+  // já ter a casa e as funções de gerir verem o servidor.
+  useEffect(() => {
+    if (!user) return;
+    const rascunho = servidor.auth.tomarRascunho();
+    if (!rascunho) return;
+    (async () => {
+      const { membros, pins } = membrosDoRascunho(rascunho);
+      const pinsDados = {};
+      const erros = [];
+      for (const m of membros) {
+        const erro = await acrescentarMembro(m);
+        if (erro) erros.push(`${m.nome}: ${erro}`);
+        else if (m.papel === 'crianca') pinsDados[m.nome] = pins[m.nome];
+      }
+      setBoasVindas({ casa: rascunho.nomeCasa, pins: pinsDados, erros });
+    })();
+  }, [user]);
 
   // A importação da agenda, ao entrar.
   //
@@ -1091,6 +1121,39 @@ function Shell() {
         onSaude={() => { fecharVistas(); setSaude(true); }}
         onDoc={() => { fecharVistas(); setDoc(true); }}
         onGestao={() => { fecharVistas(); setGestao(true); }} /> : null}
+
+      {boasVindas ? (
+        <Sheet t={t} title={`A casa ${boasVindas.casa} está pronta`}
+          sub="Guarde os PIN das crianças: não voltam a aparecer"
+          onClose={() => setBoasVindas(null)}
+          action={<Primary t={t} comum label="Já anotei" onPress={() => setBoasVindas(null)} />}>
+          <View style={{ gap: S.md, paddingBottom: S.lg }}>
+            <Text style={{ fontFamily: FONT.body, fontSize: 14, lineHeight: 21, color: t.text2 }}>
+              É administrador(a) desta casa. Pode acrescentar mais gente, e mudar o PIN de cada criança, em Gestão da Casa.
+            </Text>
+            {Object.keys(boasVindas.pins).map((n) => (
+              <View key={n} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+                minHeight: 48, paddingHorizontal: 14, borderRadius: R.row, backgroundColor: t.subtle }}>
+                <Text style={{ fontFamily: FONT.body, fontSize: 16, color: t.text1 }}>{n}</Text>
+                <Text selectable accessibilityLabel={`PIN de ${n}`} style={{ fontFamily: FONT.display, fontSize: 20, fontWeight: '700', letterSpacing: 3, color: t.text1 }}>
+                  {boasVindas.pins[n]}
+                </Text>
+              </View>
+            ))}
+            {boasVindas.erros.length ? (
+              <View style={{ gap: 4 }}>
+                <Text style={{ fontFamily: FONT.ui, fontSize: 13, color: t.state.errTexto }}>
+                  Não foi possível acrescentar:
+                </Text>
+                {boasVindas.erros.map((e) => (
+                  <Text key={e} style={{ fontFamily: FONT.ui, fontSize: 13, color: t.state.errTexto }}>{e}</Text>
+                ))}
+                <Text style={{ fontFamily: FONT.ui, fontSize: 13, color: t.text3 }}>Tente outra vez em Gestão da Casa.</Text>
+              </View>
+            ) : null}
+          </View>
+        </Sheet>
+      ) : null}
 
       {signOut ? (
         <Confirm t={t} destructive icon="warning"
