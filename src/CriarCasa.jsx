@@ -61,10 +61,13 @@ const Etiqueta = ({ texto, onRemover, rotulo }) => (
   </View>
 );
 
-export default function CriarCasa({ glass, onVoltar, onCriar, ocupado = false, erro = null, aviso: avisoDeFora = null }) {
+// `semGoogle`: quem já entrou pela Google (e não está em nenhuma casa) — o último passo
+// cria a casa logo, sem voltar à Google. `nomeInicial`: o nome que a Google deu.
+export default function CriarCasa({ glass, onVoltar, onCriar, ocupado = false, erro = null, aviso: avisoDeFora = null,
+  semGoogle = false, nomeInicial = '' }) {
   const [passo, setPasso] = useState(0);
   const [nomeCasa, setNomeCasa] = useState('');
-  const [nome, setNome] = useState('');
+  const [nome, setNome] = useState(nomeInicial || '');
   const [criancas, setCriancas] = useState([]);
   const [novaCrianca, setNovaCrianca] = useState('');
   const [adultos, setAdultos] = useState([]);
@@ -220,7 +223,9 @@ export default function CriarCasa({ glass, onVoltar, onCriar, ocupado = false, e
             </Text>
           </Pressable>
           <Rotulo>
-            Vai à Google confirmar quem é. A casa só é criada quando voltar: se desistir na Google, não fica nada criado.
+            {semGoogle
+              ? 'A casa é criada já, com a conta Google que acabou de confirmar.'
+              : 'Vai à Google confirmar quem é. A casa só é criada quando voltar: se desistir na Google, não fica nada criado.'}
           </Rotulo>
         </View>
       ) : null}
@@ -238,8 +243,11 @@ export default function CriarCasa({ glass, onVoltar, onCriar, ocupado = false, e
         <Botao rotulo={passo === 2 && !criancas.length && !adultos.length && !novaCrianca.trim() && !novoAdulto.nome.trim() && !novoAdulto.email.trim() ? 'Saltar' : 'Seguinte'}
           onPress={seguinte} primario />
       ) : (
-        <Botao rotulo={ocupado ? 'A abrir a Google…' : 'Criar com a Google'} onPress={criar} primario desativado={ocupado || !responsavel}
-          icone={<G />} />
+        <Botao rotulo={semGoogle
+            ? (ocupado ? 'A criar…' : 'Criar a minha casa')
+            : (ocupado ? 'A abrir a Google…' : 'Criar com a Google')}
+          onPress={criar} primario desativado={ocupado || !responsavel}
+          icone={semGoogle ? null : <G />} />
       )}
       <Botao rotulo="Voltar" onPress={anterior} />
     </View>

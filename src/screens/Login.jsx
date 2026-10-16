@@ -44,7 +44,13 @@ export default function Login({ t, onEnter, erroInicial = null }) {
   const [erroGoogle, setErroGoogle] = useState(erroInicial);
   // A Google confirmou quem é a pessoa mas o e-mail não está em nenhuma casa: não
   // é uma falha, é o princípio de uma casa nova — abre-se o formulário.
-  useEffect(() => { if (semCasa(erroInicial)) setStep('criar'); }, []);
+  useEffect(() => {
+    // Com bilhete: a Google confirmou quem é e o servidor deu-lhe como criar a
+    // casa — pergunta-se se quer, e cria-se SEM voltar à Google. Sem bilhete (um
+    // servidor mais antigo) abre-se o formulário, e a criação passa pela Google.
+    if (servidor.auth.bilheteSemCasa()) setStep('convite');
+    else if (semCasa(erroInicial)) setStep('criar');
+  }, []);
   // A razão crua, por baixo da frase. É o que uma captura tem de trazer
   // para se saber o que correu mal sem adivinhar.
   const [detalheDoErro, setDetalheDoErro] = useState(null);
@@ -232,13 +238,32 @@ export default function Login({ t, onEnter, erroInicial = null }) {
       // para a lista de contas era mandá-la para uma casa que não é a dela.
       if (novaCasa || semCasaAinda) {
         setErroGoogle((m) => String(m).replace(' A abrir as contas desta casa.', ''));
-        setStep('criar');
+        setStep(semCasaAinda && servidor.auth.bilheteSemCasa() ? 'convite' : 'criar');
       } else {
         setStep('contas');
       }
     }
   };
   const criarCasa = (rascunho) => entrarComGoogle(rascunho);
+
+  // Quem entrou pela Google sem estar em nenhuma casa e aceitou criar uma: o
+  // servidor cria-a com o bilhete e devolve a sessão. Não há segunda ida à Google.
+  const criarComBilhete = async (rascunho) => {
+    setErroGoogle(null);
+    setAAbrirGoogle(true);
+    try {
+      const r = await servidor.auth.criarCasaComBilhete(rascunho);
+      setAAbrirGoogle(false);
+      onEnter(r.record.nome);
+    } catch (e) {
+      setAAbrirGoogle(false);
+      const m = (e && e.message) || 'Não foi possível criar a casa. Tente outra vez.';
+      setErroGoogle(m);
+      // Um bilhete expirado não volta a servir: recomeça-se pela entrada.
+      if (/expirou/i.test(m)) setStep('login');
+    }
+  };
+  const bilhete = servidor.auth.bilheteSemCasa();
 
   const press = (k) => {
     if (k === '←') return setPin(p => p.slice(0, -1));
@@ -369,11 +394,46 @@ export default function Login({ t, onEnter, erroInicial = null }) {
             Ainda não faz parte de uma casa? Peça o convite ao administrador da família, ou crie a sua.
           </Text>
           </>
+        ) : step === 'convite' && bilhete ? (
+          // A Google confirmou quem é, mas o e-mail não está em nenhuma casa. Não é
+          // um erro: pergunta-se o que a pessoa quer fazer.
+          <View style={glass}>
+            <Text style={{ fontFamily: FONT.display, fontSize: 24, fontWeight: '500', color: '#FFFFFF' }}>
+              Ainda não está numa casa
+            </Text>
+            <Text style={{ fontFamily: FONT.body, fontSize: 15, lineHeight: 22, color: 'rgba(255,255,255,0.85)' }}>
+              A conta {bilhete.email || 'da Google'} entrou, mas ainda não faz parte de nenhuma casa.
+              Quer criar uma agora?
+            </Text>
+            <Pressable onPress={() => { setErroGoogle(null); setStep('criar'); }}
+              accessibilityRole="button" accessibilityLabel="Sim, criar uma casa"
+              style={{ minHeight: 56, borderRadius: R.row, backgroundColor: '#FFFFFF',
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, ...elev(3) }}>
+              <Icon name="home" size={22} color={CLARO.text1} />
+              <Text style={{ fontFamily: FONT.display, fontSize: 16, fontWeight: '700', color: CLARO.text1, letterSpacing: 0.4 }}>
+                Sim, criar uma casa
+              </Text>
+            </Pressable>
+            <Text style={{ fontFamily: FONT.ui, fontSize: 12, lineHeight: 19, color: 'rgba(255,255,255,0.62)' }}>
+              Se foi convidado para uma casa que já existe, peça a quem a administra que acrescente
+              este e-mail, e entre outra vez.
+            </Text>
+            <Pressable onPress={() => { servidor.auth.esquecerBilhete(); setErroGoogle(null); setStep('login'); }}
+              accessibilityRole="button" accessibilityLabel="Não, voltar"
+              style={{ minHeight: 48, borderRadius: R.row, borderWidth: 1, borderColor: 'rgba(255,255,255,0.45)',
+                alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontFamily: FONT.display, fontSize: 15, fontWeight: '500', color: '#FFFFFF', letterSpacing: 0.4 }}>
+                Não, voltar
+              </Text>
+            </Pressable>
+          </View>
         ) : step === 'criar' ? (
-          <CriarCasa glass={glass} onVoltar={() => { setErroGoogle(null); setDetalheDoErro(null); setStep('login'); }}
-            onCriar={criarCasa} ocupado={aAbrirGoogle}
-            aviso={semCasa(erroGoogle) ? erroGoogle : null}
-            erro={semCasa(erroGoogle) ? null : erroGoogle} />
+          <CriarCasa glass={glass} semGoogle={!!bilhete}
+            nomeInicial={bilhete ? bilhete.nome : ''}
+            onVoltar={() => { setErroGoogle(null); setDetalheDoErro(null); setStep(bilhete ? 'convite' : 'login'); }}
+            onCriar={bilhete ? criarComBilhete : criarCasa} ocupado={aAbrirGoogle}
+            aviso={!bilhete && semCasa(erroGoogle) ? erroGoogle : null}
+            erro={!bilhete && semCasa(erroGoogle) ? null : erroGoogle} />
         ) : step === 'contas' ? (
           <View style={glass}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>

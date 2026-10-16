@@ -34,6 +34,24 @@ export const MAX_ADULTOS = 4;
 export const SEM_CASA = /ainda não faz parte de nenhuma casa/i;
 export const semCasa = (erro) => SEM_CASA.test(String(erro || ''));
 
+// O bilhete que o servidor dá a quem entrou pela Google e não está em nenhuma
+// casa (`casa-criar.pb.js`): vem em `response.data` do erro, cada valor num
+// ValidationError (texto em `.message`). O PocketBase normaliza esses textos —
+// maiúscula inicial e um ponto no fim —, e aqui desfaz-se o que é seguro
+// desfazer: o ponto, e as maiúsculas do e-mail (o servidor guarda-o em
+// minúsculas). O bilhete só tem maiúsculas e dígitos, por isso chega intacto.
+export const bilheteDoErro = (erro) => {
+  const d = erro && erro.response && erro.response.data;
+  const texto = (v) => (v && typeof v === 'object' ? String(v.message || '') : String(v || ''));
+  const bilhete = d ? texto(d.bilhete).trim().replace(/\.+$/, '') : '';
+  if (!bilhete) return null;
+  return {
+    bilhete,
+    email: texto(d.email).trim().replace(/\.+$/, '').toLowerCase(),
+    nome: texto(d.nome).trim().replace(/\.+$/, '').replace(/^-$/, ''),
+  };
+};
+
 export const emailValido = (e) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(e || '').trim());
 
 export const erroDoNomeDaCasa = (n) => {

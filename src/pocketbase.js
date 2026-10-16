@@ -37,7 +37,7 @@ import { terminaSessao } from './sessao.js';
 // dois lados da fila: aqui, no envio, e no `sync.js`, na entrada.
 import { A_SAUDE_SOBE, PORQUE_NAO_SOBE } from './endereco.js';
 import { eColecaoDeSaude } from './colecoes-de-saude.js';
-import { TERMOS_VERSAO } from './criar-casa.js';
+import { TERMOS_VERSAO, bilheteDoErro } from './criar-casa.js';
 
 // O armazenamento é injetável para este módulo poder ser exercitado fora do
 // React Native — é assim que db/pocketbase/provar-cliente.mjs o testa a sério,
@@ -58,6 +58,12 @@ let rascunhoDaCasa = null;
 // O pedido de «criar casa» em curso: posto por `prepararNovaCasa` antes de ir à
 // Google, lido pelo caminho que conclui a entrada. `null` é a entrada normal.
 let novaCasaPedida = null;
+
+// O bilhete de quem entrou pela Google e NÃO está em nenhuma casa: o servidor
+// recusa a entrada mas dá-lhe isto, e com isto cria-se a casa sem voltar à
+// Google (`criarCasaComBilhete`). Só em memória: se a página recarregar, perde-se
+// e a pessoa volta a entrar pela Google. Vale 15 minutos e usa-se uma vez.
+let bilheteSemCasa = null;
 
 export const configurar = (opts = {}) => {
   if (opts.storage) guarda = opts.storage;
@@ -455,6 +461,48 @@ export const auth = {
   // A Google devolveu-nos alguma coisa? Lê-se o endereço, e mais nada.
   // O rascunho de «Criar a minha casa», uma só vez: quem o pede leva-o e ele
   // deixa de existir. Existe depois de uma entrada que criou a casa.
+  // O bilhete de quem entrou pela Google e não está em nenhuma casa — ou `null`.
+  // `{ bilhete, email, nome }`: o e-mail é o que a Google confirmou, para a app o
+  // mostrar («A conta ana@… ainda não está em nenhuma casa»).
+  bilheteSemCasa() {
+    return bilheteSemCasa;
+  },
+  esquecerBilhete() {
+    bilheteSemCasa = null;
+  },
+
+  // Cria a casa com o bilhete, SEM voltar à Google: o servidor faz da pessoa
+  // administradora e devolve a sessão, que se guarda como a de qualquer entrada.
+  // O bilhete só se gasta se a criação resultar; um erro do formulário (sem
+  // nome, sem aceite) deixa corrigir e repetir.
+  async criarCasaComBilhete(rascunho) {
+    if (!estaLigado()) return semLigacao();
+    if (!bilheteSemCasa) throw new Error('Esta entrada expirou. Entre outra vez pela Google.');
+    let r;
+    try {
+      r = await pb.send('/api/casa/criar', {
+        method: 'POST',
+        body: {
+          bilhete: bilheteSemCasa.bilhete,
+          nome_casa: rascunho.nomeCasa,
+          nome: rascunho.nome,
+          responsabilidade_aceite: rascunho.responsabilidade === true,
+          termos: TERMOS_VERSAO,
+        },
+      });
+    } catch (e) {
+      // Um bilhete gasto ou expirado não volta a servir.
+      if (/expirou/i.test((e && e.message) || '')) bilheteSemCasa = null;
+      throw e;
+    }
+    pb.authStore.save(r.token, r.record);
+    bilheteSemCasa = null;
+    agendaLigada = null;
+    erroDaFotografia = null;
+    rascunhoDaCasa = rascunho;
+    return r;
+  },
+
   // «Criar a minha casa» põe aqui o que a pessoa preencheu ANTES de ir à Google
   // (ou `null`, para uma entrada normal). É lido pelos dois caminhos de entrada.
   prepararNovaCasa(rascunho) {
@@ -542,6 +590,7 @@ export const auth = {
       return { ok: true, record: r.record };
     } catch (e) {
       limpar();
+      bilheteSemCasa = bilheteDoErro(e);
       return { ok: false, erro: (e && e.message) || 'Não foi possível concluir a entrada.' };
     }
   },
@@ -634,6 +683,7 @@ export const auth = {
       // A janela em branco não pode ficar pendurada por cima da app quando a
       // entrada falha ou é cancelada.
       if (janela) { try { janela.close(); } catch (x) { /* já fechada */ } }
+      bilheteSemCasa = bilheteDoErro(e);
       throw e;
     }
   },

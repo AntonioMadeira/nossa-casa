@@ -18,7 +18,7 @@
 jest.mock('../src/pocketbase', () => ({
   estaLigado: () => false,
   ligado: false,
-  auth: { valida: () => false, membro: () => null, provedores: async () => ({ alcancavel: false, semServidor: true, lista: [] }) },
+  auth: { valida: () => false, membro: () => null, bilheteSemCasa: () => null, esquecerBilhete: () => {}, provedores: async () => ({ alcancavel: false, semServidor: true, lista: [] }) },
   ler: {},
   escrever: {},
   google: {

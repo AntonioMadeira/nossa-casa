@@ -10,7 +10,7 @@ const React = require('react');
 const TestRenderer = require('react-test-renderer');
 const {
   erroDoNomeDaCasa, erroDoNome, erroDoRascunho, limparRascunho,
-  pinAleatorio, senhaAleatoria, membrosDoRascunho, emailValido, MAX_CASA, MAX_NOME, semCasa,
+  pinAleatorio, senhaAleatoria, membrosDoRascunho, emailValido, MAX_CASA, MAX_NOME, semCasa, bilheteDoErro,
 } = require('../src/criar-casa');
 const CriarCasa = require('../src/CriarCasa').default;
 
@@ -47,6 +47,32 @@ describe('a app deteta que o e-mail ainda não está em nenhuma casa', () => {
   it('⚠ não confunde com outros erros da entrada', () => {
     for (const outro of ['Failed to authenticate.', 'Este e-mail não está autorizado a criar casas neste servidor.',
       'O servidor da casa não está a responder.', '', null, undefined]) expect(semCasa(outro)).toBe(false);
+  });
+});
+
+describe('o bilhete de quem entrou pela Google sem casa', () => {
+  // Como o PocketBase devolve o `data` de um ForbiddenError: cada valor num
+  // ValidationError, com a maiúscula inicial e o ponto final que ele acrescenta.
+  const doServidor = (extra = {}) => ({
+    response: { status: 403, message: 'Este e-mail ainda não faz parte de nenhuma casa.', data: {
+      bilhete: { code: 'bilhete', message: 'K7M2Q9X4B8T6R3W5Y2Z7C4V9N6D3F8H5J2L7P4S9.' },
+      email: { code: 'email', message: 'Ana.nova@example.com.' },
+      nome: { code: 'nome', message: 'Ana Nova.' },
+      ...extra,
+    } },
+  });
+  it('lê o bilhete, o e-mail e o nome, desfazendo o que o PocketBase acrescenta', () => {
+    expect(bilheteDoErro(doServidor())).toEqual({
+      bilhete: 'K7M2Q9X4B8T6R3W5Y2Z7C4V9N6D3F8H5J2L7P4S9', email: 'ana.nova@example.com', nome: 'Ana Nova',
+    });
+  });
+  it('o nome «-» (a Google não deu nenhum) lê-se como vazio', () => {
+    expect(bilheteDoErro(doServidor({ nome: { message: '-.' } })).nome).toBe('');
+  });
+  it('⚠ sem bilhete não há nada a oferecer: outros erros devolvem null', () => {
+    for (const e of [null, undefined, {}, new Error('x'), { response: {} }, { response: { data: {} } },
+      { response: { data: { bilhete: { message: '' } } } },
+      { response: { data: { email: { message: 'ana@x.pt' } } } }]) expect(bilheteDoErro(e)).toBeNull();
   });
 });
 
@@ -229,6 +255,19 @@ describe('o ecrã «Criar a minha casa»', () => {
     const r = montar({ aviso: 'Este e-mail ainda não faz parte de nenhuma casa. Crie a sua, ou peça o convite a um administrador.' });
     expect(texto(r)).toMatch(/Crie a sua, ou peça o convite/);
     expect(texto(r)).toMatch(/Como se chama a casa\?/);
+  });
+  it('⚠ quem JÁ entrou pela Google cria a casa logo: o botão não fala da Google, e traz o nome que ela deu', () => {
+    const criar = jest.fn();
+    const r = montar({ semGoogle: true, nomeInicial: 'Ana Nova', onCriar: criar });
+    escrever(r, 'Nome da casa', 'Silva'); carregar(r, 'Seguinte');
+    expect(porRotulo(r, 'O seu nome')[0].props.value).toBe('Ana Nova');
+    carregar(r, 'Seguinte'); carregar(r, 'Saltar');
+    expect(texto(r)).toMatch(/A casa é criada já, com a conta Google que acabou de confirmar/);
+    expect(texto(r)).not.toMatch(/Vai à Google confirmar/);
+    expect(porRotulo(r, 'Criar com a Google')).toHaveLength(0);
+    carregar(r, 'Aceito a responsabilidade pelos dados');
+    carregar(r, 'Criar a minha casa');
+    expect(criar).toHaveBeenCalledWith({ nomeCasa: 'Silva', nome: 'Ana Nova', criancas: [], adultos: [], responsabilidade: true });
   });
   it('mostra o erro que a Google ou o servidor devolveram, sem sair do formulário', () => {
     const r = montar({ erro: 'Este e-mail não está autorizado a criar casas neste servidor.' });

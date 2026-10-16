@@ -125,6 +125,98 @@ await prova('⚠ nem o administrador da casa reescreve o registo — mas pode re
   if (c.responsabilidade_por !== mail('ana')) throw new Error('o registo mudou');
 });
 
+console.log('\n── «Continuar com Google» sem casa: um bilhete, e a casa cria-se sem voltar à Google ──');
+// Os valores vêm em `response.data.<campo>.message` (ValidationError do servidor).
+const dadosDoErro = (e) => {
+  const d = (e && e.response && e.response.data) || {};
+  const r = {};
+  for (const k of Object.keys(d)) r[k] = d[k] && d[k].message !== undefined ? d[k].message : d[k];
+  // O PocketBase normaliza estes textos: maiúscula inicial e um ponto no fim.
+  if (r.bilhete) r.bilhete = String(r.bilhete).replace(/\.$/, '');
+  if (r.email) r.email = String(r.email).replace(/\.$/, '').toLowerCase();
+  return r;
+};
+const semBilhete = async (email, nome) => {
+  try { await entrar(email, nome); } catch (e) { return { erro: e, dados: dadosDoErro(e) }; }
+  throw new Error('entrou, e não devia');
+};
+const criarComBilhete = (corpo) => {
+  const c = new PocketBase(URL_DO_SERVIDOR);
+  c.autoCancellation(false);
+  return c.send('/api/casa/criar', { method: 'POST', body: corpo });
+};
+let bil;
+await prova('um e-mail sem casa é recusado, mas com um bilhete e o e-mail que a Google confirmou', async () => {
+  bil = await semBilhete(mail('eva'), 'Eva Google');
+  if (!bil.dados.bilhete || String(bil.dados.bilhete).length < 30) throw new Error('sem bilhete: ' + JSON.stringify(bil.dados));
+  if (bil.dados.email !== mail('eva')) throw new Error('e-mail do bilhete: ' + bil.dados.email);
+  if (!/ainda não faz parte de nenhuma casa/.test(bil.erro.message)) throw new Error('frase: ' + bil.erro.message);
+});
+await prova('dois pedidos dão bilhetes diferentes', async () => {
+  const outro = await semBilhete(mail('eva'), 'Eva Google');
+  if (outro.dados.bilhete === bil.dados.bilhete) throw new Error('o mesmo bilhete duas vezes');
+});
+await prova('⚠ sem aceitar a responsabilidade, recusado — e o bilhete NÃO se gasta', async () => {
+  await recusado(() => criarComBilhete({ bilhete: bil.dados.bilhete, nome_casa: PREFIXO + 'Casa da Eva', nome: 'Eva' }));
+});
+await prova('sem nome da casa, recusado — e o bilhete continua bom', async () => {
+  await recusado(() => criarComBilhete({ bilhete: bil.dados.bilhete, nome_casa: '  ', nome: 'Eva', ...ACEITE }));
+});
+let eva;
+const casasAntes = await casasDeProvas();
+await prova('com tudo certo, cria a casa e devolve a sessão de administradora — sem voltar à Google', async () => {
+  eva = await criarComBilhete({ bilhete: bil.dados.bilhete, nome_casa: PREFIXO + 'Casa da Eva', nome: 'Eva', ...ACEITE });
+  if (!eva.token) throw new Error('sem sessão');
+  if (eva.record.papel !== 'admin') throw new Error('papel: ' + eva.record.papel);
+  if (eva.record.email !== mail('eva')) throw new Error('e-mail: ' + eva.record.email);
+  if ((await casasDeProvas()) !== casasAntes + 1) throw new Error('número de casas');
+});
+await prova('a casa fica com o registo da responsabilidade, em nome do e-mail da Google', async () => {
+  const c = await pb.collection('casas').getOne(eva.record.casa);
+  if (c.nome !== PREFIXO + 'Casa da Eva') throw new Error('nome: ' + c.nome);
+  if (c.responsabilidade_por !== mail('eva') || c.responsabilidade_versao !== 'v1') throw new Error('registo: ' + JSON.stringify(c));
+});
+await prova('a sessão devolvida funciona: lê a sua casa, e só a sua', async () => {
+  const eu = new PocketBase(URL_DO_SERVIDOR);
+  eu.autoCancellation(false);
+  eu.authStore.save(eva.token, eva.record);
+  const ids = (await eu.collection('casas').getFullList()).map((c) => c.id);
+  if (ids.length !== 1 || ids[0] !== eva.record.casa) throw new Error('viu ' + ids.length + ' casas');
+});
+await prova('⚠ o bilhete só se usa UMA vez', async () => {
+  const antes6 = await casasDeProvas();
+  await recusado(() => criarComBilhete({ bilhete: bil.dados.bilhete, nome_casa: PREFIXO + 'Outra da Eva', nome: 'Eva', ...ACEITE }));
+  if ((await casasDeProvas()) !== antes6) throw new Error('o bilhete criou uma segunda casa');
+});
+await prova('um bilhete inventado, vazio ou em falta é recusado', async () => {
+  for (const b of ['inventado', '', undefined]) {
+    await recusado(() => criarComBilhete({ bilhete: b, nome_casa: PREFIXO + 'X', nome: 'X', ...ACEITE }));
+  }
+});
+await prova('⚠ o e-mail é o que a Google confirmou, e não o que o cliente diz', async () => {
+  const f = await semBilhete(mail('fred'), 'Fred');
+  const r = await criarComBilhete({
+    bilhete: f.dados.bilhete, nome_casa: PREFIXO + 'Casa do Fred', nome: 'Fred', ...ACEITE,
+    email: mail('presidente'), casa: ana.record.casa, papel: 'adulto',
+  });
+  if (r.record.email !== mail('fred')) throw new Error('e-mail: ' + r.record.email);
+  if (r.record.casa === ana.record.casa) throw new Error('entrou na casa da Ana!');
+  if (r.record.papel !== 'admin') throw new Error('papel: ' + r.record.papel);
+});
+await prova('quem já tem casa NÃO recebe bilhete: entra como sempre', async () => {
+  const outra = await entrar(mail('eva'), 'Eva Google');
+  if (outra.record.id !== eva.record.id) throw new Error('outro registo');
+});
+await prova('a Eva pode juntar um adulto, como qualquer administradora', async () => {
+  const eu = new PocketBase(URL_DO_SERVIDOR);
+  eu.autoCancellation(false);
+  eu.authStore.save(eva.token, eva.record);
+  await eu.collection('membros').create({
+    nome: 'Convidado da Eva', login: `${eva.record.casa}_convidado`, casa: eva.record.casa, papel: 'adulto',
+    email: mail('convidado-eva'), emailVisibility: true, password: 'palavra-passe-longa-1', passwordConfirm: 'palavra-passe-longa-1',
+  });
+});
+
 console.log('\n── o cliente não escolhe a casa nem o papel ──');
 let bruno;
 await prova('mandar `casa` e `papel` ao criar: a casa é uma casa NOVA e o papel é admin do servidor', async () => {
