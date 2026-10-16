@@ -68,7 +68,7 @@ const aosCentimos = (n) => Math.round(n * 100) / 100;
 // alternativas para que o campo de valor livre não seja tão grande», opção A de
 // `design/campo-de-valor.dc.html`). Os «−» e «+» ficam: são eles que afinam.
 export function NumField({ t, value, onChange, aoTerminar, step = 5, min = 0, max = 99999, suffix = true,
-  vazio = false, rotulo = 'Valor', placeholder = null, compacto = false, estreito = false }) {
+  vazio = false, rotulo = 'Valor', placeholder = null, compacto = false, estreito = false, focar = false }) {
   const [txt, setTxt] = React.useState(null);
   const semValor = vazio && (value === null || value === undefined || value === '');
   const atual = semValor ? 0 : Number(value) || 0;
@@ -111,6 +111,7 @@ export function NumField({ t, value, onChange, aoTerminar, step = 5, min = 0, ma
       {compacto ? null : <Botao rotuloDoBotao={`Menos ${step}`} sinal="−" para={aosCentimos(Math.max(min, atual - step))} />}
       <TextInput
         value={mostrado}
+        autoFocus={focar}
         onFocus={() => setTxt(semValor ? '' : String(atual).replace('.', ','))}
         onChangeText={escrever}
         onBlur={commit}

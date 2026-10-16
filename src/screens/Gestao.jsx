@@ -85,6 +85,7 @@ export default function Gestao({ t, user, onClose }) {
   const [totalAEscrever, setTotalAEscrever] = useState(null);
   // Os doze meses a meio de uma edição, ou `null` quando a folha está fechada.
   const [mesesRascunho, setMesesRascunho] = useState(null);
+  const [mesEmFoco, setMesEmFoco] = useState(null);
   const [selectedMember, setSelectedMember] = useState(null);
   const [selectedEnvelope, setSelectedEnvelope] = useState(null);
   // O formulário do membro, e a recusa que vier do servidor. O erro é estado
@@ -164,8 +165,10 @@ export default function Gestao({ t, user, onClose }) {
   // O `NumField` dos meses só conta o valor ASSENTE (`aoTerminar`): a meio da
   // escrita nada se redistribui, senão cada tecla mexia nos outros onze meses.
   const ignorar = () => undefined;
-  const abrirMeses = () => setMesesRascunho(valoresDosMeses.slice());
-  const fecharMeses = () => setMesesRascunho(null);
+  // `mes` é o mês cujo campo recebe o foco ao abrir (toque numa barra); sem ele
+  // abre-se a folha sem foco nenhum.
+  const abrirMeses = (mes = null) => { setMesEmFoco(mes); setMesesRascunho(valoresDosMeses.slice()); };
+  const fecharMeses = () => { setMesesRascunho(null); setMesEmFoco(null); };
   const mexerNoMes = (i, v) => setMesesRascunho(m => ajustarMes(m, i, v, orcamento.total));
 
   const renderBudgetTab = () => (
@@ -216,24 +219,30 @@ export default function Gestao({ t, user, onClose }) {
             options={[{ value: 'igual', label: 'Igual todos os meses' }, { value: 'meses', label: 'Ajustar meses' }]}
             onChange={(v) => { if (v === 'igual') definirOrcamento({ total: orcamento.total }); else abrirMeses(); }} />
           <Card t={t}>
-            <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 5, height: 72 }}
+            {/* Cada coluna (barra + inicial) é UM alvo: toca-se e abre-se o campo
+                desse mês. Doze alvos lado a lado não chegam a 44 de largura num
+                telefone; a altura, essa, passa dos 44. */}
+            <View style={{ flexDirection: 'row', gap: 5 }}
               accessibilityLabel={`Distribuição do orçamento pelos doze meses de ${anoDoOrcamento}`}>
               {valoresDosMeses.map((v, i) => {
                 const maximo = Math.max(...valoresDosMeses, 1);
+                const atual = i === mesCorrente;
                 return (
-                  <View key={i} style={{ flex: 1, height: Math.max(4, Math.round(64 * v / maximo)),
-                    borderTopLeftRadius: 3, borderTopRightRadius: 3,
-                    backgroundColor: i === mesCorrente ? t.accent : t.actBrd }} />
+                  <Pressable key={MONTHS[i]} style={{ flex: 1 }} onPress={() => abrirMeses(i)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${MONTHS[i]}, ${EUR(v)}. Alterar o orçamento deste mês`}>
+                    <View style={{ height: 72, justifyContent: 'flex-end' }}>
+                      <View style={{ height: Math.max(4, Math.round(64 * v / maximo)),
+                        borderTopLeftRadius: 3, borderTopRightRadius: 3,
+                        backgroundColor: atual ? t.accent : t.actBrd }} />
+                    </View>
+                    <Text style={{ marginTop: 6, textAlign: 'center', fontFamily: FONT.ui, fontSize: 11,
+                      color: atual ? t.text2 : t.text3, fontWeight: atual ? '700' : '400' }}>
+                      {MONTHS[i][0]}
+                    </Text>
+                  </Pressable>
                 );
               })}
-            </View>
-            <View style={{ flexDirection: 'row', gap: 5, marginTop: 6 }}>
-              {MONTHS.map((m, i) => (
-                <Text key={m} style={{ flex: 1, textAlign: 'center', fontFamily: FONT.ui, fontSize: 11,
-                  color: i === mesCorrente ? t.text2 : t.text3, fontWeight: i === mesCorrente ? '700' : '400' }}>
-                  {m[0]}
-                </Text>
-              ))}
             </View>
             <Text style={{ marginTop: S.sm, textAlign: 'center', fontFamily: FONT.ui, fontSize: 11.5, color: t.text3 }}>
               {igualTodosOsMeses ? `${EUR(orcamento.total / MESES_DO_ANO)} em cada mês` : 'Distribuição à medida'}
@@ -995,7 +1004,7 @@ export default function Gestao({ t, user, onClose }) {
               <View key={nome}>
                 <Label t={t}>{nome}</Label>
                 <NumField t={t} value={mesesRascunho[i]} step={50} min={0} max={Math.max(orcamento.total, 1)}
-                  rotulo={`${nome}, em euros`}
+                  rotulo={`${nome}, em euros`} focar={mesEmFoco === i}
                   onChange={ignorar} aoTerminar={(v) => mexerNoMes(i, v)} />
               </View>
             ))}
