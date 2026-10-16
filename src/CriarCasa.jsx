@@ -4,7 +4,7 @@ import { S, R, FONT } from './theme';
 import Icon, { GoogleG as G } from './Icon';
 import {
   MAX_CASA, MAX_NOME, MAX_CRIANCAS, MAX_ADULTOS,
-  erroDoNomeDaCasa, erroDoNome, erroDoRascunho, limparRascunho, emailValido,
+  erroDoNomeDaCasa, erroDoNome, erroDoRascunho, limparRascunho, emailValido, TEXTO_RESPONSABILIDADE,
 } from './criar-casa';
 
 // «Criar a minha casa»: quatro passos curtos antes de ir à Google.
@@ -70,8 +70,9 @@ export default function CriarCasa({ glass, onVoltar, onCriar, ocupado = false, e
   const [adultos, setAdultos] = useState([]);
   const [novoAdulto, setNovoAdulto] = useState({ nome: '', email: '' });
   const [aviso, setAviso] = useState(null);
+  const [responsavel, setResponsavel] = useState(false);
 
-  const rascunho = () => limparRascunho({ nomeCasa, nome, criancas, adultos });
+  const rascunho = () => limparRascunho({ nomeCasa, nome, criancas, adultos, responsabilidade: responsavel });
 
   const seguinte = () => {
     setAviso(null);
@@ -203,6 +204,21 @@ export default function CriarCasa({ glass, onVoltar, onCriar, ocupado = false, e
               Outros adultos: {adultos.length ? adultos.map((a) => a.nome).join(', ') : 'nenhum por agora'}
             </Text>
           </View>
+          {/* Quem cria a casa responde pelos dados que lá pôr. Sem este «aceito» a
+              casa não se cria, e o servidor guarda a versão do texto, a data e o
+              e-mail de quem o aceitou. */}
+          <Pressable onPress={() => setResponsavel(!responsavel)} accessibilityRole="checkbox"
+            accessibilityLabel="Aceito a responsabilidade pelos dados" accessibilityState={{ checked: responsavel }}
+            aria-checked={responsavel}
+            style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, minHeight: 48, paddingVertical: 6 }}>
+            <View style={{ width: 28, height: 28, marginTop: 2, borderRadius: R.row, borderWidth: 2, borderColor: '#FFFFFF',
+              backgroundColor: responsavel ? '#FFFFFF' : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+              {responsavel ? <Icon name="check" size={18} color="#0B1B2B" /> : null}
+            </View>
+            <Text style={{ flex: 1, fontFamily: FONT.body, fontSize: 14, lineHeight: 21, color: '#FFFFFF' }}>
+              {TEXTO_RESPONSABILIDADE}
+            </Text>
+          </Pressable>
           <Rotulo>
             Vai à Google confirmar quem é. A casa só é criada quando voltar: se desistir na Google, não fica nada criado.
           </Rotulo>
@@ -222,7 +238,7 @@ export default function CriarCasa({ glass, onVoltar, onCriar, ocupado = false, e
         <Botao rotulo={passo === 2 && !criancas.length && !adultos.length && !novaCrianca.trim() && !novoAdulto.nome.trim() && !novoAdulto.email.trim() ? 'Saltar' : 'Seguinte'}
           onPress={seguinte} primario />
       ) : (
-        <Botao rotulo={ocupado ? 'A abrir a Google…' : 'Criar com a Google'} onPress={criar} primario desativado={ocupado}
+        <Botao rotulo={ocupado ? 'A abrir a Google…' : 'Criar com a Google'} onPress={criar} primario desativado={ocupado || !responsavel}
           icone={<G />} />
       )}
       <Botao rotulo="Voltar" onPress={anterior} />

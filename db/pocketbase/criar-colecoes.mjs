@@ -320,6 +320,13 @@ const CAMPOS_DA_CASA = [
     // Cada aparelho compara-o com o que viu e apaga a cópia local se é novo.
     // Nasce também na tabela `CAMPOS` do `acrescentar-campos.mjs`.
     txt('zerado_em', { max: 40 }),
+    // O registo de que quem criou a casa aceitou a responsabilidade pelos dados:
+    // versão do texto, quando, e com que e-mail. Escreve-os o hook `casa-criar`, e
+    // ninguém os altera depois. Nascem também na tabela `CAMPOS` do
+    // `acrescentar-campos.mjs` e na migração `1792300000_casas_responsabilidade`.
+    txt('responsabilidade_versao', { max: 20 }),
+    txt('responsabilidade_aceite_em', { max: 40 }),
+    txt('responsabilidade_por', { max: 120 }),
     // §4: o valor do ponto é validado no SERVIDOR, não só no campo.
     //
     // ⚠ Mínimo 0, e não 0,01. Os pontos passaram a ser opcionais em

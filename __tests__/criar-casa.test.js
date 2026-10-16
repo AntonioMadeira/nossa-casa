@@ -51,10 +51,15 @@ describe('a app deteta que o e-mail ainda não está em nenhuma casa', () => {
 });
 
 describe('o rascunho inteiro', () => {
-  const bom = { nomeCasa: 'Silva', nome: 'Ana', criancas: ['Léo', 'Mia'], adultos: [{ nome: 'Rui', email: 'rui@x.pt' }] };
+  const bom = { nomeCasa: 'Silva', nome: 'Ana', criancas: ['Léo', 'Mia'], adultos: [{ nome: 'Rui', email: 'rui@x.pt' }], responsabilidade: true };
   it('um rascunho bom passa', () => expect(erroDoRascunho(bom)).toBeNull());
   it('só a casa e o nome também: o resto é opcional', () => {
-    expect(erroDoRascunho({ nomeCasa: 'Silva', nome: 'Ana' })).toBeNull();
+    expect(erroDoRascunho({ nomeCasa: 'Silva', nome: 'Ana', responsabilidade: true })).toBeNull();
+  });
+  it('⚠ sem aceitar a responsabilidade pelos dados, não há rascunho válido', () => {
+    expect(erroDoRascunho({ ...bom, responsabilidade: false })).toMatch(/responsabilidade pelos dados/);
+    expect(erroDoRascunho({ ...bom, responsabilidade: undefined })).toMatch(/responsabilidade pelos dados/);
+    expect(erroDoRascunho({ ...bom, responsabilidade: 'sim' })).toMatch(/responsabilidade pelos dados/);
   });
   it('⚠ dois com o mesmo nome (sem olhar a maiúsculas) são recusados', () => {
     expect(erroDoRascunho({ ...bom, criancas: ['Léo', 'léo'] })).toMatch(/Já há alguém chamado/);
@@ -70,8 +75,8 @@ describe('o rascunho inteiro', () => {
   it('limparRascunho apara, tira vazios e só deixa texto', () => {
     expect(limparRascunho({
       nomeCasa: '  Silva ', nome: ' Ana ', criancas: [' Léo ', '', '  '],
-      adultos: [{ nome: ' Rui ', email: ' r@x.pt ' }, { nome: '', email: '' }],
-    })).toEqual({ nomeCasa: 'Silva', nome: 'Ana', criancas: ['Léo'], adultos: [{ nome: 'Rui', email: 'r@x.pt' }] });
+      adultos: [{ nome: ' Rui ', email: ' r@x.pt ' }, { nome: '', email: '' }], responsabilidade: true,
+    })).toEqual({ responsabilidade: true, nomeCasa: 'Silva', nome: 'Ana', criancas: ['Léo'], adultos: [{ nome: 'Rui', email: 'r@x.pt' }] });
   });
 });
 
@@ -159,11 +164,29 @@ describe('o ecrã «Criar a minha casa»', () => {
     expect(texto(r)).toMatch(/Está tudo certo\?/);
     expect(texto(r)).toMatch(/Casa: Família Silva/);
     expect(criar).not.toHaveBeenCalled();
+    carregar(r, 'Aceito a responsabilidade pelos dados');
     carregar(r, 'Criar com a Google');
     expect(criar).toHaveBeenCalledTimes(1);
     expect(criar).toHaveBeenCalledWith({
-      nomeCasa: 'Silva', nome: 'Ana', criancas: ['Léo'], adultos: [{ nome: 'Rui', email: 'rui@x.pt' }],
+      nomeCasa: 'Silva', nome: 'Ana', criancas: ['Léo'], adultos: [{ nome: 'Rui', email: 'rui@x.pt' }], responsabilidade: true,
     });
+  });
+  it('⚠ sem o «aceito», o botão da Google não funciona — a casa não se cria', () => {
+    const criar = jest.fn();
+    const r = montar({ onCriar: criar });
+    escrever(r, 'Nome da casa', 'Silva'); carregar(r, 'Seguinte');
+    escrever(r, 'O seu nome', 'Ana'); carregar(r, 'Seguinte');
+    carregar(r, 'Saltar');
+    expect(texto(r)).toMatch(/Sou o responsável pelos dados que registar nesta casa/);
+    expect(porRotulo(r, 'Criar com a Google')[0].props.accessibilityState.disabled).toBe(true);
+    carregar(r, 'Criar com a Google');
+    expect(criar).not.toHaveBeenCalled();
+    // aceitar e desaceitar
+    carregar(r, 'Aceito a responsabilidade pelos dados');
+    expect(porRotulo(r, 'Aceito a responsabilidade pelos dados')[0].props.accessibilityState.checked).toBe(true);
+    expect(porRotulo(r, 'Criar com a Google')[0].props.accessibilityState.disabled).toBe(false);
+    carregar(r, 'Aceito a responsabilidade pelos dados');
+    expect(porRotulo(r, 'Criar com a Google')[0].props.accessibilityState.disabled).toBe(true);
   });
   it('⚠ o que ficou escrito nos campos de acrescentar, sem carregar no botão, também conta', () => {
     const criar = jest.fn();
@@ -171,7 +194,7 @@ describe('o ecrã «Criar a minha casa»', () => {
     escrever(r, 'Nome da casa', 'Silva'); carregar(r, 'Seguinte');
     escrever(r, 'O seu nome', 'Ana'); carregar(r, 'Seguinte');
     escrever(r, 'Nome da criança', 'Léo');            // sem «Acrescentar»
-    carregar(r, 'Seguinte'); carregar(r, 'Criar com a Google');
+    carregar(r, 'Seguinte'); carregar(r, 'Aceito a responsabilidade pelos dados'); carregar(r, 'Criar com a Google');
     expect(criar.mock.calls[0][0].criancas).toEqual(['Léo']);
   });
   it('o passo das crianças pode saltar-se, e só a casa e o nome bastam', () => {
@@ -180,8 +203,9 @@ describe('o ecrã «Criar a minha casa»', () => {
     escrever(r, 'Nome da casa', 'Silva'); carregar(r, 'Seguinte');
     escrever(r, 'O seu nome', 'Ana'); carregar(r, 'Seguinte');
     carregar(r, 'Saltar');
+    carregar(r, 'Aceito a responsabilidade pelos dados');
     carregar(r, 'Criar com a Google');
-    expect(criar).toHaveBeenCalledWith({ nomeCasa: 'Silva', nome: 'Ana', criancas: [], adultos: [] });
+    expect(criar).toHaveBeenCalledWith({ nomeCasa: 'Silva', nome: 'Ana', criancas: [], adultos: [], responsabilidade: true });
   });
   it('⚠ um adulto sem e-mail válido não se acrescenta', () => {
     const r = montar();

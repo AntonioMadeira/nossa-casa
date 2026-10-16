@@ -11,6 +11,17 @@
 // texto sem segredo: nomes e e-mails. Os PIN e as palavras-passe gera-se no
 // passo 3, depois do login.
 
+// Quem cria uma casa é o responsável pelos dados que lá registar — incluindo os
+// de saúde de menores. Em vez de o servidor o presumir, a pessoa di-lo, e o
+// servidor REGISTA que o disse: a versão do texto, a data e o e-mail. Se o
+// texto mudar de sentido, sobe a versão, e as casas antigas ficam com a versão
+// que aceitaram.
+export const TERMOS_VERSAO = 'v1';
+export const TEXTO_RESPONSABILIDADE =
+  'Sou o responsável pelos dados que registar nesta casa, incluindo os de saúde '
+  + 'de menores, e tenho legitimidade para os tratar. Fica registado, com a data '
+  + 'e o meu e-mail, que o aceitei.';
+
 export const MAX_CASA = 40;
 export const MAX_NOME = 30;
 export const MAX_CRIANCAS = 8;
@@ -40,9 +51,10 @@ export const erroDoNome = (n) => {
 };
 
 // Valida o rascunho inteiro. Devolve a primeira razão, ou null.
-export const erroDoRascunho = ({ nomeCasa, nome, criancas = [], adultos = [] } = {}) => {
+export const erroDoRascunho = ({ nomeCasa, nome, criancas = [], adultos = [], responsabilidade = false } = {}) => {
   const e = erroDoNomeDaCasa(nomeCasa) || erroDoNome(nome);
   if (e) return e;
+  if (responsabilidade !== true) return 'Tem de aceitar a responsabilidade pelos dados desta casa.';
   if (criancas.length > MAX_CRIANCAS) return `No máximo ${MAX_CRIANCAS} crianças de cada vez; as outras acrescentam-se depois.`;
   if (adultos.length > MAX_ADULTOS) return `No máximo ${MAX_ADULTOS} adultos de cada vez; os outros acrescentam-se depois.`;
   const vistos = new Set([String(nome).trim().toLowerCase()]);
@@ -65,7 +77,8 @@ export const erroDoRascunho = ({ nomeCasa, nome, criancas = [], adultos = [] } =
 
 // O que se guarda enquanto a pessoa vai à Google e volta: aparado, sem vazios,
 // sem nada que não seja texto.
-export const limparRascunho = ({ nomeCasa, nome, criancas = [], adultos = [] } = {}) => ({
+export const limparRascunho = ({ nomeCasa, nome, criancas = [], adultos = [], responsabilidade = false } = {}) => ({
+  responsabilidade: responsabilidade === true,
   nomeCasa: String(nomeCasa || '').trim(),
   nome: String(nome || '').trim(),
   criancas: criancas.map((c) => String(c || '').trim()).filter(Boolean),

@@ -34,6 +34,19 @@
 // Convém defini-la enquanto houver dados de saúde de menores. O limite de
 // tentativas por IP (migração `rate_limits`) cobre o abuso em massa.
 //
+// -- Quem cria a casa responde pelos dados -------------------------------------
+//
+// Uma casa guarda dados de saúde de menores, e quem a cria é quem decide o que
+// lá entra. Em vez de o servidor o presumir, a pessoa di-lo («Aceito a
+// responsabilidade pelos dados») e o servidor REGISTA-o na casa: a versão do
+// texto que aceitou (`responsabilidade_versao`), quando
+// (`responsabilidade_aceite_em`) e com que e-mail (`responsabilidade_por`).
+// Sem o aceite a casa não se cria. Estes três campos não se alteram depois, nem
+// pelo administrador da casa — é o registo de que foi aceite.
+//
+// Se o texto mudar de sentido, sobe a versão aqui e em `src/criar-casa.js`; as
+// casas antigas ficam com a versão que aceitaram.
+//
 // -- Atómico -------------------------------------------------------------------
 //
 // Se criar o administrador falhar, a casa acabada de criar apaga-se: não fica
@@ -77,11 +90,18 @@ onRecordAuthWithOAuth2Request((e) => {
   // leva o id da casa.
   const slug = nome.toLowerCase().replace(/[^a-z0-9]+/g, '') || 'admin';
 
+  if (dados.responsabilidade_aceite !== true || dados.termos !== 'v1') {
+    throw new BadRequestError('É preciso aceitar a responsabilidade pelos dados desta casa.');
+  }
+
   let casa = null;
   try {
     casa = new Record(e.app.findCollectionByNameOrId('casas'));
     casa.set('nome', nomeCasa);
     casa.set('valor_ponto', 0.10);
+    casa.set('responsabilidade_versao', 'v1');
+    casa.set('responsabilidade_aceite_em', new Date().toISOString());
+    casa.set('responsabilidade_por', email);
     e.app.save(casa);
 
     const membro = new Record(e.app.findCollectionByNameOrId('membros'));
@@ -99,6 +119,7 @@ onRecordAuthWithOAuth2Request((e) => {
     // liga a conta da Google a ele e devolve a sessão.
     e.record = membro;
     e.isNewRecord = false;
+    e.app.logger().info('Casa criada', 'casa', casa.id, 'por', email, 'responsabilidade', 'v1');
   } catch (err) {
     if (casa && casa.id) {
       try { e.app.delete(casa); } catch (_) { /* a casa fica por apagar à mão; o erro verdadeiro é o de baixo */ }
@@ -108,3 +129,18 @@ onRecordAuthWithOAuth2Request((e) => {
 
   e.next();
 }, 'membros');
+
+// O registo de que a responsabilidade foi aceite não se altera depois — nem
+// pelo administrador da casa, que pode renomeá-la mas não reescrever isto.
+// (Uma escrita do próprio servidor, como o «Começar de Zero», não passa por aqui.)
+onRecordUpdateRequest((e) => {
+  if (e.hasSuperuserAuth()) return e.next();
+  const antigo = e.app.findRecordById('casas', e.record.id);
+  const campos = ['responsabilidade_versao', 'responsabilidade_aceite_em', 'responsabilidade_por'];
+  for (let i = 0; i < campos.length; i += 1) {
+    if (e.record.getString(campos[i]) !== antigo.getString(campos[i])) {
+      throw new BadRequestError('O registo da responsabilidade pelos dados não se altera.');
+    }
+  }
+  e.next();
+}, 'casas');

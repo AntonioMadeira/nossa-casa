@@ -101,6 +101,9 @@ const CAMPOS = [
   ['casas', 'orcamento', { type: 'json', maxSize: 20000 }],
   // O carimbo do último «Começar de Zero»: apaga a cópia local dos outros aparelhos.
   ['casas', 'zerado_em', { type: 'text', max: 40 }],
+  ['casas', 'responsabilidade_versao', { type: 'text', max: 20 }],
+  ['casas', 'responsabilidade_aceite_em', { type: 'text', max: 40 }],
+  ['casas', 'responsabilidade_por', { type: 'text', max: 120 }],
 ];
 
 // As coleções que nasceram depois da base. A definição é a MESMA do

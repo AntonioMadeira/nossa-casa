@@ -58,6 +58,8 @@ const entrar = (email, nome, createData) => new PocketBase(URL_DO_SERVIDOR).coll
   'oidc', codigo(email, nome), 'x', 'http://127.0.0.1/retorno', createData);
 
 const mail = (n) => `${n}@prova-casa.pt`;
+// O que o cliente manda quando a pessoa aceitou a responsabilidade pelos dados.
+const ACEITE = { responsabilidade_aceite: true, termos: 'v1' };
 const base = await casasDeProvas();
 
 console.log('\n── quem não pediu uma casa e não existe é recusado ──');
@@ -71,7 +73,7 @@ await prova('mandar `casa` e `papel` à mão também não o deixa entrar',
 console.log('\n── pediu para criar uma casa ──');
 let ana;
 await prova('cria a casa e entra com a sessão do administrador', async () => {
-  ana = await entrar(mail('ana'), 'Ana Prova', { nova_casa: true, nome_casa: PREFIXO + 'Casa da Ana', nome: 'Ana' });
+  ana = await entrar(mail('ana'), 'Ana Prova', { nova_casa: true, ...ACEITE, nome_casa: PREFIXO + 'Casa da Ana', nome: 'Ana' });
   if (!ana.token) throw new Error('sem sessão');
   if (ana.record.papel !== 'admin') throw new Error('papel: ' + ana.record.papel);
   if (ana.record.nome !== 'Ana') throw new Error('nome: ' + ana.record.nome);
@@ -94,11 +96,40 @@ await prova('quem criou lê a sua casa — e só a sua', async () => {
   if (casas.length !== 1 || casas[0].id !== ana.record.casa) throw new Error('viu ' + casas.length + ' casas');
 });
 
+console.log('\n── a responsabilidade pelos dados fica registada ──');
+await prova('a casa guarda a versão do texto, quando foi aceite e por quem', async () => {
+  const c = await pb.collection('casas').getOne(ana.record.casa);
+  if (c.responsabilidade_versao !== 'v1') throw new Error('versão: ' + c.responsabilidade_versao);
+  if (c.responsabilidade_por !== mail('ana')) throw new Error('por: ' + c.responsabilidade_por);
+  const quando = Date.parse(c.responsabilidade_aceite_em);
+  if (!(Math.abs(Date.now() - quando) < 5 * 60 * 1000)) throw new Error('data: ' + c.responsabilidade_aceite_em);
+});
+await prova('⚠ sem aceitar a responsabilidade a casa não se cria — e não fica nada para trás', async () => {
+  const antes0 = await casasDeProvas();
+  await recusado(() => entrar(mail('d1'), 'D', { nova_casa: true, nome_casa: PREFIXO + 'Sem aceite', nome: 'D' }));
+  await recusado(() => entrar(mail('d2'), 'D', { nova_casa: true, responsabilidade_aceite: false, termos: 'v1', nome_casa: PREFIXO + 'Falso', nome: 'D' }));
+  await recusado(() => entrar(mail('d3'), 'D', { nova_casa: true, responsabilidade_aceite: 'sim', termos: 'v1', nome_casa: PREFIXO + 'Texto', nome: 'D' }));
+  if ((await casasDeProvas()) !== antes0) throw new Error('criou uma casa sem aceite');
+});
+await prova('um texto de termos que o servidor não conhece (cliente desatualizado) é recusado',
+  () => recusado(() => entrar(mail('d4'), 'D', { nova_casa: true, responsabilidade_aceite: true, termos: 'v0', nome_casa: PREFIXO + 'Velha', nome: 'D' })));
+await prova('⚠ nem o administrador da casa reescreve o registo — mas pode renomeá-la', async () => {
+  const eu = new PocketBase(URL_DO_SERVIDOR);
+  eu.autoCancellation(false);
+  eu.authStore.save(ana.token, ana.record);
+  await recusado(() => eu.collection('casas').update(ana.record.casa, { responsabilidade_por: 'outro@x.pt' }));
+  await recusado(() => eu.collection('casas').update(ana.record.casa, { responsabilidade_versao: 'v9' }));
+  await recusado(() => eu.collection('casas').update(ana.record.casa, { responsabilidade_aceite_em: '2020-01-01T00:00:00Z' }));
+  await eu.collection('casas').update(ana.record.casa, { nome: PREFIXO + 'Casa da Ana (renomeada)' });
+  const c = await pb.collection('casas').getOne(ana.record.casa);
+  if (c.responsabilidade_por !== mail('ana')) throw new Error('o registo mudou');
+});
+
 console.log('\n── o cliente não escolhe a casa nem o papel ──');
 let bruno;
 await prova('mandar `casa` e `papel` ao criar: a casa é uma casa NOVA e o papel é admin do servidor', async () => {
   bruno = await entrar(mail('bruno'), 'Bruno', {
-    nova_casa: true, nome_casa: PREFIXO + 'Casa do Bruno', casa: ana.record.casa, papel: 'adulto',
+    nova_casa: true, ...ACEITE, nome_casa: PREFIXO + 'Casa do Bruno', casa: ana.record.casa, papel: 'adulto',
   });
   if (bruno.record.casa === ana.record.casa) throw new Error('entrou na casa da Ana!');
   if (bruno.record.papel !== 'admin') throw new Error('papel: ' + bruno.record.papel);
@@ -118,13 +149,13 @@ await prova('o Bruno não vê a casa da Ana', async () => {
 console.log('\n── o que o servidor recusa ──');
 await prova('sem nome da casa, recusado — e sem casa nenhuma criada', async () => {
   const antes2 = await casasDeProvas();
-  await recusado(() => entrar(mail('c1'), 'C', { nova_casa: true, nome_casa: '   ' }));
+  await recusado(() => entrar(mail('c1'), 'C', { nova_casa: true, ...ACEITE, nome_casa: '   ' }));
   if ((await casasDeProvas()) !== antes2) throw new Error('criou uma casa sem nome');
 });
 await prova('nome da casa com mais de 40 caracteres, recusado',
-  () => recusado(() => entrar(mail('c2'), 'C', { nova_casa: true, nome_casa: 'x'.repeat(41) })));
+  () => recusado(() => entrar(mail('c2'), 'C', { nova_casa: true, ...ACEITE, nome_casa: 'x'.repeat(41) })));
 await prova('`nova_casa` que não é verdadeiro, recusado',
-  () => recusado(() => entrar(mail('c3'), 'C', { nova_casa: 'não', nome_casa: PREFIXO + 'X' })));
+  () => recusado(() => entrar(mail('c3'), 'C', { nova_casa: 'não', ...ACEITE, nome_casa: PREFIXO + 'X' })));
 
 console.log('\n── quem já existe entra como sempre ──');
 await prova('a Ana volta a entrar sem pedir nada — não nasce outra casa', async () => {
@@ -135,7 +166,7 @@ await prova('a Ana volta a entrar sem pedir nada — não nasce outra casa', asy
 });
 await prova('mesmo a pedir «criar casa» outra vez, a Ana continua com a mesma casa', async () => {
   const antes4 = await casasDeProvas();
-  const outra = await entrar(mail('ana'), 'Ana Prova', { nova_casa: true, nome_casa: PREFIXO + 'Outra' });
+  const outra = await entrar(mail('ana'), 'Ana Prova', { nova_casa: true, ...ACEITE, nome_casa: PREFIXO + 'Outra' });
   if (outra.record.casa !== ana.record.casa) throw new Error('mudou de casa');
   if ((await casasDeProvas()) !== antes4) throw new Error('criou outra casa');
 });

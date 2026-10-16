@@ -37,6 +37,7 @@ import { terminaSessao } from './sessao.js';
 // dois lados da fila: aqui, no envio, e no `sync.js`, na entrada.
 import { A_SAUDE_SOBE, PORQUE_NAO_SOBE } from './endereco.js';
 import { eColecaoDeSaude } from './colecoes-de-saude.js';
+import { TERMOS_VERSAO } from './criar-casa.js';
 
 // O armazenamento é injetável para este módulo poder ser exercitado fora do
 // React Native — é assim que db/pocketbase/provar-cliente.mjs o testa a sério,
@@ -337,7 +338,12 @@ const tokenDaAgenda = async () => {
 // O que o servidor precisa para criar a casa: que se pediu, o nome dela, e o
 // nome de quem a cria. A casa e o papel de administrador NÃO vão daqui — quem
 // os decide é o gancho do servidor.
-const dadosDaNovaCasa = (n) => ({ nova_casa: true, nome_casa: n.nomeCasa, nome: n.nome });
+const dadosDaNovaCasa = (n) => ({
+  nova_casa: true, nome_casa: n.nomeCasa, nome: n.nome,
+  // A pessoa aceitou ser a responsável pelos dados (e o texto que aceitou): o
+  // servidor recusa criar a casa sem isto, e regista-o.
+  responsabilidade_aceite: n.responsabilidade === true, termos: TERMOS_VERSAO,
+});
 
 export const auth = {
   // Os adultos entram por e-mail.
