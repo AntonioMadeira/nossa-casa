@@ -16,6 +16,13 @@ export const MAX_NOME = 30;
 export const MAX_CRIANCAS = 8;
 export const MAX_ADULTOS = 4;
 
+// A resposta do servidor a um e-mail que entrou pela Google e não está em
+// nenhuma casa (`casa-criar.pb.js`). A app reconhece-a para, em vez de mostrar
+// um erro, abrir «Criar a minha casa» — a pessoa já provou quem é, e o que lhe
+// falta é uma casa.
+export const SEM_CASA = /ainda não faz parte de nenhuma casa/i;
+export const semCasa = (erro) => SEM_CASA.test(String(erro || ''));
+
 export const emailValido = (e) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(e || '').trim());
 
 export const erroDoNomeDaCasa = (n) => {

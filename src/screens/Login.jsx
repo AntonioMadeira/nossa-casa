@@ -22,10 +22,16 @@ import * as sync from '../sync';
 import * as servidor from '../pocketbase';
 import { Pill } from '../ui';
 import CriarCasa from '../CriarCasa';
+import { semCasa } from '../criar-casa';
 
 export default function Login({ t, onEnter, erroInicial = null }) {
   const { s, entrarCrianca, temPin, membros: MEMBERS, nomeDaCasa, criancas, adultos } = useStore();
   const insets = useSafeAreaInsets();
+  // «Bengui» é a casa de demonstração: com servidor ligado, é o valor de antes
+  // de se saber de que casa é este aparelho, e não o nome de ninguém.
+  const subtitulo = sync.ligado() && nomeDaCasa === 'Bengui'
+    ? 'Agenda, tarefas e dinheiro da família'
+    : `Família ${nomeDaCasa} · agenda, tarefas e dinheiro`;
   const [step, setStep] = useState(erroInicial ? 'contas' : 'login');   // login | criar | contas | criancas | pin
   const [kid, setKid] = useState(null);
   const [pin, setPin] = useState('');
@@ -36,6 +42,9 @@ export default function Login({ t, onEnter, erroInicial = null }) {
   // não neste ecrã. E começa-se no passo das CONTAS, porque quem acabou de
   // falhar a entrada pela Google precisa do caminho local à vista.
   const [erroGoogle, setErroGoogle] = useState(erroInicial);
+  // A Google confirmou quem é a pessoa mas o e-mail não está em nenhuma casa: não
+  // é uma falha, é o princípio de uma casa nova — abre-se o formulário.
+  useEffect(() => { if (semCasa(erroInicial)) setStep('criar'); }, []);
   // A razão crua, por baixo da frase. É o que uma captura tem de trazer
   // para se saber o que correu mal sem adivinhar.
   const [detalheDoErro, setDetalheDoErro] = useState(null);
@@ -193,7 +202,13 @@ export default function Login({ t, onEnter, erroInicial = null }) {
       // responde» sobre um bloqueador de janelas manda a pessoa reiniciar um
       // servidor que está bom. Foi o que aconteceu em 18/09/2026.
       const bloqueada = /bloqueou a janela/i.test(e.message || '');
+      // O e-mail é de uma conta Google válida mas não está em nenhuma casa: não é
+      // um erro, é o início de uma casa nova.
+      const semCasaAinda = semCasa(e && e.message);
       setErroGoogle(
+        semCasaAinda
+          ? e.message
+        :
         // Cinco causas, e nenhuma se deduz da frase do erro. O «não responde»
         // era dito como «não está configurada», e mandou-nos à consola da
         // Google procurar um problema que era o servidor estar desligado.
@@ -212,9 +227,10 @@ export default function Login({ t, onEnter, erroInicial = null }) {
           : 'A Google autorizou, mas o servidor não conseguiu concluir a entrada. '
             + 'A abrir as contas desta casa.');
       setDetalheDoErro(cru);
+      if (semCasaAinda) setDetalheDoErro(null);   // não é uma falha: não há razão crua a mostrar
       // Quem estava a criar uma casa fica no formulário, com a razão: mandá-la
       // para a lista de contas era mandá-la para uma casa que não é a dela.
-      if (novaCasa) {
+      if (novaCasa || semCasaAinda) {
         setErroGoogle((m) => String(m).replace(' A abrir as contas desta casa.', ''));
         setStep('criar');
       } else {
@@ -277,7 +293,7 @@ export default function Login({ t, onEnter, erroInicial = null }) {
       <View style={{ flex: 1, width: '100%', maxWidth: LARGURA_APP, marginHorizontal: 'auto' }}>
       <View style={{ position: 'absolute', top: insets.top + 30, left: 16, gap: 4 }}>
         <Text style={{ fontFamily: FONT.display, fontSize: 32, fontWeight: '500', color: '#FFFFFF', letterSpacing: 0.25 }}>Nossa Casa</Text>
-        <Text style={{ fontFamily: FONT.ui, fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>Família {nomeDaCasa} · agenda, tarefas e dinheiro</Text>
+        <Text style={{ fontFamily: FONT.ui, fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>{subtitulo}</Text>
       </View>
 
       <View style={{ flex: 1, justifyContent: 'flex-end', paddingHorizontal: 16, paddingBottom: Math.max(insets.bottom, 14) }}>
@@ -355,7 +371,9 @@ export default function Login({ t, onEnter, erroInicial = null }) {
           </>
         ) : step === 'criar' ? (
           <CriarCasa glass={glass} onVoltar={() => { setErroGoogle(null); setDetalheDoErro(null); setStep('login'); }}
-            onCriar={criarCasa} ocupado={aAbrirGoogle} erro={erroGoogle} />
+            onCriar={criarCasa} ocupado={aAbrirGoogle}
+            aviso={semCasa(erroGoogle) ? erroGoogle : null}
+            erro={semCasa(erroGoogle) ? null : erroGoogle} />
         ) : step === 'contas' ? (
           <View style={glass}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>

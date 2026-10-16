@@ -50,8 +50,10 @@ onRecordAuthWithOAuth2Request((e) => {
   const quer = dados.nova_casa === true || dados.nova_casa === 'true';
   if (!quer) {
     throw new ForbiddenError(
-      'Este e-mail ainda não faz parte de nenhuma casa. Peça o convite a um '
-      + 'administrador, ou escolha «Criar a minha casa».');
+      // ⚠ O cliente reconhece esta frase (`SEM_CASA` em src/criar-casa.js) para
+      // abrir o formulário de «Criar a minha casa». Se a mudar, mude lá também.
+      'Este e-mail ainda não faz parte de nenhuma casa. Crie a sua, ou peça o '
+      + 'convite a um administrador.');
   }
 
   const email = String((e.oAuth2User && e.oAuth2User.email) || '').trim().toLowerCase();

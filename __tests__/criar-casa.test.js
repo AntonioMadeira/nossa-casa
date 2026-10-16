@@ -10,7 +10,7 @@ const React = require('react');
 const TestRenderer = require('react-test-renderer');
 const {
   erroDoNomeDaCasa, erroDoNome, erroDoRascunho, limparRascunho,
-  pinAleatorio, senhaAleatoria, membrosDoRascunho, emailValido, MAX_CASA, MAX_NOME,
+  pinAleatorio, senhaAleatoria, membrosDoRascunho, emailValido, MAX_CASA, MAX_NOME, semCasa,
 } = require('../src/criar-casa');
 const CriarCasa = require('../src/CriarCasa').default;
 
@@ -33,6 +33,20 @@ describe('o nome da casa e o da pessoa', () => {
   it('e-mail: tem de parecer um', () => {
     expect(emailValido('ana@exemplo.pt')).toBe(true);
     for (const mau of ['', 'ana', 'ana@', '@x.pt', 'a b@x.pt', 'ana@x']) expect(emailValido(mau)).toBe(false);
+  });
+});
+
+describe('a app deteta que o e-mail ainda não está em nenhuma casa', () => {
+  const doServidor = 'Este e-mail ainda não faz parte de nenhuma casa. Crie a sua, ou peça o convite a um administrador.';
+  it('reconhece a frase que o servidor devolve (casa-criar.pb.js)', () => {
+    expect(semCasa(doServidor)).toBe(true);
+    // o ficheiro do servidor tem de continuar a dizer isto, senão o cliente deixa de a reconhecer
+    const hook = require('fs').readFileSync(require('path').join(__dirname, '..', 'db', 'pocketbase', 'pb_hooks', 'casa-criar.pb.js'), 'utf8');
+    expect(hook.replace(/'\s*\+\s*'/g, '')).toMatch(/ainda não faz parte de nenhuma casa/);
+  });
+  it('⚠ não confunde com outros erros da entrada', () => {
+    for (const outro of ['Failed to authenticate.', 'Este e-mail não está autorizado a criar casas neste servidor.',
+      'O servidor da casa não está a responder.', '', null, undefined]) expect(semCasa(outro)).toBe(false);
   });
 });
 
@@ -186,6 +200,11 @@ describe('o ecrã «Criar a minha casa»', () => {
     expect(texto(r)).toMatch(/Como se chama a casa\?/);
     carregar(r, 'Voltar');
     expect(voltar).toHaveBeenCalledTimes(1);
+  });
+  it('⚠ um e-mail sem casa chega como AVISO e não como erro: abre-se o formulário, sem alarme', () => {
+    const r = montar({ aviso: 'Este e-mail ainda não faz parte de nenhuma casa. Crie a sua, ou peça o convite a um administrador.' });
+    expect(texto(r)).toMatch(/Crie a sua, ou peça o convite/);
+    expect(texto(r)).toMatch(/Como se chama a casa\?/);
   });
   it('mostra o erro que a Google ou o servidor devolveram, sem sair do formulário', () => {
     const r = montar({ erro: 'Este e-mail não está autorizado a criar casas neste servidor.' });

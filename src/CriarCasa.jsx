@@ -61,7 +61,7 @@ const Etiqueta = ({ texto, onRemover, rotulo }) => (
   </View>
 );
 
-export default function CriarCasa({ glass, onVoltar, onCriar, ocupado = false, erro = null }) {
+export default function CriarCasa({ glass, onVoltar, onCriar, ocupado = false, erro = null, aviso: avisoDeFora = null }) {
   const [passo, setPasso] = useState(0);
   const [nomeCasa, setNomeCasa] = useState('');
   const [nome, setNome] = useState('');
@@ -209,6 +209,11 @@ export default function CriarCasa({ glass, onVoltar, onCriar, ocupado = false, e
         </View>
       ) : null}
 
+      {/* Um aviso que não é um erro: o e-mail entrou bem pela Google, só não está
+          em nenhuma casa — e é este o ecrã onde se começa uma. */}
+      {avisoDeFora && !aviso && !erro ? (
+        <Text accessibilityRole="alert" style={{ fontFamily: FONT.body, fontSize: 14, lineHeight: 21, color: '#FFFFFF' }}>{avisoDeFora}</Text>
+      ) : null}
       {aviso || erro ? (
         <Text accessibilityRole="alert" style={{ fontFamily: FONT.ui, fontSize: 13, lineHeight: 19, color: '#FFB4A8' }}>{aviso || erro}</Text>
       ) : null}
