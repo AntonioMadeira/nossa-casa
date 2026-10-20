@@ -31,6 +31,7 @@ import GoogleCalendarImportModal from './src/modals/GoogleCalendarImportModal';
 import Confirm from './src/Confirm';
 import Sheet from './src/Sheet';
 import { membrosDoRascunho } from './src/criar-casa';
+import { semOsQueJaEstaoNaCasa } from './src/agenda-duplicados';
 import { APP_VERSION, AREAS, REGISTO_APP } from './src/registo-app';
 import * as servidor from './src/pocketbase';
 import Resultados from './src/screens/Resultados';
@@ -344,7 +345,11 @@ function Shell() {
           if (!vivo) return;
           const nossos = idsGoogleDaCasa();
           // O que a app pôs na agenda da Google não volta como novidade.
-          const novos = reais.filter(e => !jaVistos[e.id] && !nossos.has(e.id));
+          // E o que a casa JÁ TEM (vindo do servidor, de outro aparelho): este
+          // aparelho pode nunca o ter visto, e o servidor não guarda o id da Google.
+          const naCasa = allEvents();
+          const novos = semOsQueJaEstaoNaCasa(
+            reais.filter(e => !jaVistos[e.id] && !nossos.has(e.id)), naCasa);
           if (novos.length) { setEventosGoogle(novos.map(daGoogle)); setGoogleImport(true); }
 
           // E o sentido inverso do apagar: o que SAIU da agenda da Google.

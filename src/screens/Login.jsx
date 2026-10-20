@@ -25,7 +25,19 @@ import CriarCasa from '../CriarCasa';
 import { semCasa } from '../criar-casa';
 
 export default function Login({ t, onEnter, erroInicial = null }) {
-  const { s, entrarCrianca, temPin, membros: MEMBERS, nomeDaCasa, criancas, adultos } = useStore();
+  const { s, entrarCrianca, temPin, membros: MEMBERS, nomeDaCasa, deDemonstracao,
+    criancas: criancasDaStore, adultos: adultosDaStore } = useStore();
+  // ⚠ Com servidor, a família de demonstração NÃO é a casa de ninguém (21/10/2026).
+  //
+  // Num aparelho que ainda não leu a casa — telemóvel novo, dados do browser
+  // apagados, ou uma entrada pela Google que falhou — a loja arranca com a
+  // família de demonstração (Rita, Tomás, Léo, Mia «Bengui»), e este ecrã
+  // oferecia-a como se fosse a casa. Quem a escolhesse entrava numa sessão de
+  // faz-de-conta, e quem a via achava que os membros de demonstração tinham
+  // aparecido na sua casa. Com servidor, só se mostram membros que vieram dele.
+  const semCasaNoAparelho = sync.ligado() && deDemonstracao;
+  const criancas = semCasaNoAparelho ? [] : criancasDaStore;
+  const adultos = semCasaNoAparelho ? [] : adultosDaStore;
   const insets = useSafeAreaInsets();
   // «Bengui» é a casa de demonstração: com servidor ligado, é o valor de antes
   // de se saber de que casa é este aparelho, e não o nome de ninguém.
@@ -458,6 +470,11 @@ export default function Login({ t, onEnter, erroInicial = null }) {
                 ) : null}
               </View>
             ) : null}
+            {semCasaNoAparelho ? (
+              <Text style={{ fontFamily: FONT.body, fontSize: 15, lineHeight: 22, color: 'rgba(255,255,255,0.85)' }}>
+                Este aparelho ainda não conhece a casa. Entre com a sua Conta Google para a carregar.
+              </Text>
+            ) : null}
             {adultos.map(n => (
               <Pressable key={n} onPress={() => onEnter(n)} accessibilityRole="button" accessibilityLabel={n}
                 style={{ backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: R.row, padding: 14,
@@ -519,6 +536,12 @@ export default function Login({ t, onEnter, erroInicial = null }) {
                 ? 'Escolha o seu nome e introduza o PIN de 6 dígitos.'
                 : 'Um adulto acrescenta-as em Gestão da Casa, e dá a cada uma o seu PIN de 6 dígitos.'}
             </Text>
+            {semCasaNoAparelho ? (
+              <Text style={{ fontFamily: FONT.body, fontSize: 15, lineHeight: 22, color: 'rgba(255,255,255,0.85)' }}>
+                Este aparelho ainda não conhece a casa. Um adulto tem de entrar primeiro com a Google;
+                depois as crianças da casa aparecem aqui.
+              </Text>
+            ) : null}
             {criancas.map(n => {
               const hasPin = temPin(n);
               return (

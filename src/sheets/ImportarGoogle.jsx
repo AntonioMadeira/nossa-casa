@@ -6,6 +6,7 @@ import { Label, Primary, Pill, Opcao, Tile, Empty } from '../ui';
 import Icon from '../Icon';
 import { dayLabel } from '../format';
 import * as servidor from '../pocketbase';
+import { semOsQueJaEstaoNaCasa } from '../agenda-duplicados';
 
 // Trazer da agenda da Google para a Nossa Casa.
 //
@@ -27,7 +28,7 @@ import * as servidor from '../pocketbase';
 // Sem autorização da agenda não mostra uma lista vazia a fingir que procurou:
 // diz que falta autorizar e como se autoriza.
 export default function ImportarGoogle({ t, user, onClose }) {
-  const { set, s, importGoogleEvents, idsGoogleDaCasa } = useStore();
+  const { set, s, importGoogleEvents, idsGoogleDaCasa, allEvents } = useStore();
   const [eventos, setEventos] = useState([]);
   const [aCarregar, setACarregar] = useState(true);
   const [erro, setErro] = useState(null);
@@ -48,7 +49,8 @@ export default function ImportarGoogle({ t, user, onClose }) {
         const vindos = await servidor.google.eventos({ dias: 30, max: 50 });
         const jaVistos = s.googleCalendarImported || {};
         const nossos = idsGoogleDaCasa();
-        const novos = vindos.filter(e => !jaVistos[e.id] && !nossos.has(e.id));
+        // E o que a casa já tem, venha de onde vier: ver `agenda-duplicados.js`.
+        const novos = semOsQueJaEstaoNaCasa(vindos.filter(e => !jaVistos[e.id] && !nossos.has(e.id)), allEvents());
         setEventos(novos);
         setEscolhidos(Object.fromEntries(novos.map(e => [e.id, !e.recorrente])));
         setACarregar(false);
@@ -77,7 +79,9 @@ export default function ImportarGoogle({ t, user, onClose }) {
         // senão o evento agendado aqui voltava como novidade e ficava a dobrar.
         const jaVistos = s.googleCalendarImported || {};
         const nossos = idsGoogleDaCasa();
-        const novos = vindos.filter(e => !jaVistos[e.id] && !nossos.has(e.id));
+        // E o que a casa já tem, venha de onde vier: um telemóvel novo não sabe o
+        // que o outro importou, e sem isto oferecia-o outra vez (e ficava a dobrar).
+        const novos = semOsQueJaEstaoNaCasa(vindos.filter(e => !jaVistos[e.id] && !nossos.has(e.id)), allEvents());
         setEventos(novos);
         // As séries vêm desligadas: importar uma reunião semanal como trinta
         // eventos soltos enche a agenda da casa e não se desfaz com um toque.

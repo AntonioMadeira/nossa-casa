@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { jaEstaNaCasa } from './agenda-duplicados';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { TASKS, ITEMS, EVENTS, EQUIP, ENV_BASE, SECTIONS, MEMBERS, ROLES, HEALTH, HEALTH_DOCS,
   VAULT, GOALS, META_MOVS, DE } from './data';
@@ -6163,7 +6164,21 @@ function build(s, set, mapaServidor = { current: { casa: null, membros: {}, enve
   // Ganha com isso o servidor da casa, e ganha a garantia de não voltar à
   // Google: o `idGoogle` diz ao `criarEvento` que este já lá está.
   const importGoogleEvents = (events, user, visibilidade = 'familia') => {
-    for (const ev of events) {
+    // ⚠ A ÚLTIMA DEFESA contra o evento a dobrar (21/10/2026). As listas que
+    // oferecem já filtram o que a casa tem, mas esta é a porta de escrita: um
+    // toque duplo em «Importar», ou uma lista aberta antes de outra importação
+    // acabar, chegavam aqui com o mesmo evento duas vezes. Fica de fora o que a
+    // casa já vê (mesmo dia, hora e título) e o que já passou por aqui nesta
+    // sessão — e continua a marcar-se tudo como visto, para não voltar a aparecer.
+    // O conjunto vive no `mapaServidor`, que é o que persiste entre desenhos: esta
+    // função não é um componente e não tem hooks.
+    const importados = mapaServidor.current.importadosAgora
+      || (mapaServidor.current.importadosAgora = new Set());
+    const naCasa = allEvents();
+    const aTrazer = events.filter(ev => !importados.has(ev.id)
+      && !jaEstaNaCasa({ titulo: ev.title, dia: ev.date, hora: ev.time }, naCasa));
+    aTrazer.forEach(ev => importados.add(ev.id));
+    for (const ev of aTrazer) {
       criarEvento({
         // O mesmo defeito que o «Guardar evento» tinha: a app lê chaves
         // (`d2026-08-27`) e isto punha `2026-08-27`. Os eventos importados
@@ -6194,9 +6209,9 @@ function build(s, set, mapaServidor = { current: { casa: null, membros: {}, enve
     events.forEach(ev => { imported[ev.id] = true; });
     set(x => ({
       googleCalendarImported: { ...(x.googleCalendarImported || {}), ...imported },
-      registo: maisRegisto(x,
-        `${plural(events.length, 'evento trazido', 'eventos trazidos')} da agenda da Google`,
-        'Agenda'),
+      registo: aTrazer.length ? maisRegisto(x,
+        `${plural(aTrazer.length, 'evento trazido', 'eventos trazidos')} da agenda da Google`,
+        'Agenda') : x.registo,
     }));
   };
 
