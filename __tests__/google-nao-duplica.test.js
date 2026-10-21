@@ -124,3 +124,25 @@ describe('⚠ com servidor, a família de demonstração não é a casa de ningu
     expect(login).toMatch(/Este aparelho ainda não conhece a casa/);
   });
 });
+
+describe('⚠ com servidor, a app nunca fica em silêncio no modo local', () => {
+  const app = ler('App.jsx');
+  const store = ler('src/store.jsx');
+  it('sem sessão, ou sem ter conseguido ler a casa, o ecrã diz o que falhou em vez de mostrar a demonstração', () => {
+    expect(app).toMatch(/const semSessao = comServidor && !servidor\.auth\.valida\(\);/);
+    expect(app).toMatch(/user && comServidor && \(semSessao \|\| deDemonstracao\)/);
+    expect(app).toMatch(/Não foi possível ler a casa/);
+    expect(app).toMatch(/A sessão neste aparelho terminou/);
+  });
+  it('tem saída: tentar outra vez, e terminar a sessão', () => {
+    expect(app).toMatch(/accessibilityLabel=\{aTentar \? 'A tentar' : 'Tentar outra vez'\}/);
+    expect(app).toMatch(/'Entrar outra vez' : 'Terminar sessão'/);
+  });
+  it('a razão da falha guarda-se na loja (e não vai para o disco)', () => {
+    expect(store).toMatch(/set\(\{ erroDeLeitura: String\(\(e && e\.message\)/);
+    expect(store).toMatch(/set\(\{ erroDeLeitura: null \}\)/);
+    expect(store).toMatch(/erroDeLeitura: s\.erroDeLeitura \|\| null/);
+    const chaves = store.slice(store.indexOf('const DATA_KEYS'), store.indexOf('const DATA_KEYS') + 2500);
+    expect(chaves).not.toMatch(/erroDeLeitura/);
+  });
+});

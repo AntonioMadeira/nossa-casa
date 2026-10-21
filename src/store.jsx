@@ -949,6 +949,8 @@ export function StoreProvider({ children }) {
       const s = await carregarSync();
       const casa = s && await s.puxarCasa();
       if (!casa) return false;
+      // Leu-se a casa: já não há razão de queixa. (Não se grava no disco: é do momento.)
+      set({ erroDeLeitura: null });
       // ── ⚠ OUTRA casa neste aparelho ──────────────────────────────────────
       //
       // A cópia local é de UMA casa, e não sabia de qual. A leitura que se
@@ -1268,6 +1270,9 @@ export function StoreProvider({ children }) {
       if (typeof console !== 'undefined' && console.warn) {
         console.warn('[lerDoServidor] a leitura da casa falhou:', e && e.message ? e.message : e);
       }
+      // E diz-se no ecrã. Antes só ia para a consola, e a app ficava em silêncio com
+      // a demonstração à frente — sem ninguém saber que não estava a falar com a casa.
+      set({ erroDeLeitura: String((e && e.message) || e || 'sem resposta').slice(0, 200) });
       return false;     // servidor indisponível — a app fica local
     }
   };
@@ -6245,6 +6250,8 @@ function build(s, set, mapaServidor = { current: { casa: null, membros: {}, enve
     artigo, oNome, aoNome, deNome,
     nomeDaCasa: s.nomeDaCasa || 'Bengui',
     deDemonstracao: s.deDemonstracao !== false,
+    // Porque é que a última leitura da casa falhou (ou `null`). Só do momento.
+    erroDeLeitura: s.erroDeLeitura || null,
     canSeeHealth, allHealth, healthOf, allHealthDocs, docsOf, nextHealth,
     garantiasAExpirar, receitasAExpirar, consultasProximas,
     tapTask, isAdmin, canChangeRole, setRole, setPin, pinError, isRecurring, definirAvatar, trazerFotografia,

@@ -106,10 +106,12 @@ const TABS = [
 function Shell() {
   const { s, set, importGoogleEvents, idsGoogleDaCasa, remaining, allEvents, allTasks, allItems,
           canSeeHealth, healthOf, docsOf, allEquip, contratosDaCasa, contasDoMes, membros: MEMBERS, nomeDaCasa,
-          lerDoServidor, removerEvento, eventosQueSairamDaGoogle, isAdmin, acrescentarMembro } = useStore();
+          lerDoServidor, removerEvento, eventosQueSairamDaGoogle, isAdmin, acrescentarMembro,
+          deDemonstracao, erroDeLeitura } = useStore();
   const sysDark = useColorScheme() === 'dark';
   const [user, setUser] = useState(null);      // nome do membro ligado
   const [tab, setTab] = useState('inicio');
+  const [aTentar, setATentar] = useState(false);   // «Tentar outra vez» a ler a casa
   // Uma casa acabada de criar: o que se acrescentou, e os PIN que as crianças
   // receberam — mostram-se UMA vez, porque o servidor só guarda o resumo.
   const [boasVindas, setBoasVindas] = useState(null);
@@ -515,6 +517,64 @@ function Shell() {
   // ecrã de entrada para ele a dizer — em vez de a pessoa aterrar no
   // «Bem-vindo» sem uma palavra sobre o que correu mal.
   if (!user) return <Login t={t} onEnter={entrar} erroInicial={erroDoRetorno} />;
+
+  // ⚠ Com servidor, NUNCA o modo local (21/10/2026).
+  //
+  // Se a app tem um servidor configurado e não conseguiu ler a casa — a sessão
+  // deste aparelho caducou, ou a leitura falhou —, ficava em silêncio com a
+  // família de demonstração (Rita, Tomás, Léo, Mia) ao lado do nome de quem
+  // entrou, e tudo o que se fizesse ali ficava SÓ neste aparelho: um evento
+  // importado da Google duas vezes, sem nunca chegar à casa. Era o que se via
+  // como «os membros da demonstração apareceram na minha casa».
+  //
+  // Agora diz-se o que falhou e dá-se a saída. Quem já leu a casa uma vez (e a
+  // tem guardada) continua a ver os seus dados sem rede; isto só apanha o
+  // aparelho que nunca a leu, ou que perdeu a sessão.
+  const comServidor = typeof servidor.estaLigado === 'function' && servidor.estaLigado();
+  const semSessao = comServidor && !servidor.auth.valida();
+  if (user && comServidor && (semSessao || deDemonstracao)) {
+    const tentar = async () => { setATentar(true); try { await lerDoServidor(); } finally { setATentar(false); } };
+    return (
+      <View style={{ flex: 1, backgroundColor: t.chrome, alignItems: 'center',
+        justifyContent: 'center', paddingHorizontal: 32, gap: S.lg }}>
+        <StatusBar barStyle="light-content" />
+        <Icon name="lock" size={44} color="#FFFFFF" />
+        <Text style={{ fontFamily: FONT.display, fontSize: 20, color: '#FFFFFF', textAlign: 'center' }}>
+          {semSessao ? 'A sessão neste aparelho terminou' : 'Não foi possível ler a casa'}
+        </Text>
+        <Text style={{ fontFamily: FONT.ui, fontSize: 13, lineHeight: 21,
+          color: 'rgba(255,255,255,0.8)', textAlign: 'center' }}>
+          {semSessao
+            ? 'Entre outra vez com a Google para voltar à casa. O que estava neste aparelho não é a casa: não se mostra.'
+            : 'A app não chegou ao servidor da casa, e por isso não mostra nada em vez de mostrar dados que não são os seus.'}
+        </Text>
+        {!semSessao && erroDeLeitura ? (
+          <Text selectable style={{ fontFamily: FONT.ui, fontSize: 11, lineHeight: 16,
+            color: 'rgba(255,255,255,0.55)', textAlign: 'center' }}>
+            {erroDeLeitura}
+          </Text>
+        ) : null}
+        {!semSessao ? (
+          <Pressable onPress={tentar} disabled={aTentar} accessibilityRole="button"
+            accessibilityLabel={aTentar ? 'A tentar' : 'Tentar outra vez'}
+            style={{ minHeight: 48, paddingHorizontal: S.xl, borderRadius: R.row, backgroundColor: '#FFFFFF',
+              alignItems: 'center', justifyContent: 'center', opacity: aTentar ? 0.6 : 1 }}>
+            <Text style={{ fontFamily: FONT.display, fontSize: 15, fontWeight: '700', color: t.chrome }}>
+              {aTentar ? 'A tentar…' : 'Tentar outra vez'}
+            </Text>
+          </Pressable>
+        ) : null}
+        <Pressable onPress={() => { servidor.auth.sair(); setUser(null); }}
+          accessibilityRole="button" accessibilityLabel={semSessao ? 'Entrar outra vez' : 'Terminar sessão'}
+          style={{ minHeight: 44, paddingHorizontal: S.xl, borderRadius: R.row, borderWidth: 1,
+            borderColor: 'rgba(255,255,255,0.45)', alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontFamily: FONT.display, fontSize: 14.5, color: '#FFFFFF' }}>
+            {semSessao ? 'Entrar outra vez' : 'Terminar sessão'}
+          </Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   // Entrou, mas não vive nesta casa.
   //
